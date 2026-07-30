@@ -1,0 +1,275 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* ===== DESIGN TOKENS — Gestão Pessoal (herdado do design system do Home & Tech) ===== */
+  --color-navy: #002040; /* cor institucional / ação primária */
+  --color-navy-deep: #001830; /* pressed / fim do gradiente */
+  --color-navy-700: #013060; /* início do gradiente (logo/hero) */
+  --color-navy-tint: #eaf0f7; /* fundo dos chips de ícone */
+  --color-navy-tint-2: #dce7f3; /* hover sobre navy-tint */
+  --color-page: #f4f6f8; /* fundo da tela */
+  --color-surface: #ffffff; /* cards, barras */
+  --color-surface-2: #f7f9fb; /* inset sutil / campo muted */
+  --color-border: #e2e6eb; /* borda dos cards/campos */
+  --color-divider: #eef1f4; /* separadores de lista */
+  --color-text: #1f2a37; /* texto principal */
+  --color-text-2: #6b7888; /* texto secundário */
+  --color-muted-ink: #8a95a1; /* ícones/itens inativos (tertiary) */
+  --color-icon-bar: #44515e; /* ícones da app-bar */
+  --color-link: #2f6fb0; /* links */
+  --color-on-navy: #ffffff; /* texto sobre navy */
+
+  /* Tints semânticos (fundo de badges) */
+  --color-success-tint: #e8f6ee;
+  --color-warning-tint: #fef4e2;
+  --color-info: #2f6fb0;
+  --color-info-foreground: #ffffff;
+  --color-info-tint: #e7f0f8;
+  --color-destructive-tint: #fceaea;
+
+  /* Rampa de gráfico (dashboards Comercial / Funil) */
+  --color-chart-1: #3b82f6;
+  --color-chart-2: #6366f1;
+  --color-chart-3: #8b5cf6;
+  --color-chart-4: #a855f7;
+  --color-chart-5: #10b981;
+
+  /* Tema noturno (kits onboarding-auth + tasks-timer) — cores literais */
+  --color-night-bg: #0d2438;
+  --color-night-bg-2: #0a1c2c;
+  --color-night-surface: #12304a;
+  --color-night-surface-2: #1a3a57;
+  --color-night-border: #21425f;
+  --color-night-text: #f2f7fc;
+  --color-night-text-2: #9db4c8;
+  --color-night-muted: #5e7b95;
+  --color-night-accent: #2e8bff;
+  --color-night-accent-deep: #1c6fe0;
+  --color-night-accent-soft: rgba(46, 139, 255, 0.16);
+  --color-night-accent-2: #f59e5b;
+  --color-night-accent-3: #36d6a0;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --radius-card: 12px;
+  --radius-chip: 9px;
+  --radius-field: 12px;
+
+  --color-background: var(--color-page);
+  --color-foreground: var(--color-text);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-text);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-text);
+  --color-primary: var(--color-navy);
+  --color-primary-foreground: var(--color-on-navy);
+  --color-primary-deep: var(--color-navy);
+  --color-secondary: var(--color-navy-tint);
+  --color-secondary-foreground: var(--color-navy);
+  --color-muted: var(--color-surface-2);
+  --color-muted-foreground: var(--color-text-2);
+  --color-accent: var(--color-navy-tint);
+  --color-accent-foreground: var(--color-navy);
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: var(--color-on-navy);
+  --color-success: #16a34a;
+  --color-success-foreground: var(--color-on-navy);
+  --color-warning: #f59e0b;
+  --color-warning-foreground: var(--color-on-navy);
+  --color-border: var(--color-border);
+  --color-input: var(--color-surface);
+  --color-ring: var(--color-navy);
+  --color-ring-offset-background: var(--color-page);
+  --color-sidebar: var(--color-surface);
+  --color-sidebar-foreground: var(--color-text);
+  --color-sidebar-accent: var(--color-navy-tint);
+  --color-sidebar-accent-foreground: var(--color-navy);
+  --color-sidebar-border: var(--color-divider);
+
+  --font-sans: "Roboto", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-display: "Roboto", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --shadow-card: 0 1px 2px 0 oklch(0.24 0.06 245 / 0.06), 0 1px 3px 0 oklch(0.24 0.06 245 / 0.04);
+  --shadow-elevated:
+    0 4px 12px -2px oklch(0.24 0.06 245 / 0.12), 0 2px 6px -1px oklch(0.24 0.06 245 / 0.08);
+  --shadow-fab: 0 8px 24px -4px oklch(0.42 0.13 250 / 0.4);
+}
+
+:root {
+  --radius: 0.875rem;
+
+  --background: oklch(0.99 0.003 250);
+  --foreground: oklch(0.24 0.06 245);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.06 245);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.24 0.06 245);
+
+  /* Azul Profundo — corporate */
+  --primary: oklch(0.42 0.13 250);
+  --primary-foreground: oklch(0.99 0.003 250);
+  --primary-deep: oklch(0.28 0.08 248);
+
+  --secondary: oklch(0.96 0.01 250);
+  --secondary-foreground: oklch(0.28 0.08 248);
+
+  --muted: oklch(0.965 0.008 250);
+  --muted-foreground: oklch(0.5 0.03 250);
+
+  --accent: oklch(0.62 0.18 250);
+  --accent-foreground: oklch(1 0 0);
+
+  --destructive: oklch(0.6 0.22 27);
+  --destructive-foreground: oklch(1 0 0);
+
+  --success: oklch(0.62 0.16 155);
+}
+
+.dark {
+  /* Paleta escura — slate + azul de destaque (contraste e leitura melhores) */
+  --color-navy: #3b82f6; /* ação/ícones/títulos: azul legível no escuro */
+  --color-navy-tint: #1c2a44; /* chip de ícone + tint da home */
+  --color-page: #0f172a; /* fundo geral (mais escuro que os cards) */
+  --color-surface: #1e293b; /* cards, barra superior, menu lateral */
+  --color-surface-2: #263449; /* campos, muted, hover */
+  --color-border: #33445c; /* bordas visíveis */
+  --color-divider: #2a3a54; /* separadores de lista / borda da barra */
+  --color-text: #eef3f9; /* texto principal */
+  --color-text-2: #9aaec4; /* texto secundário */
+  --color-muted: #263449;
+  --color-link: #7ab2ff;
+  --color-on-navy: #ffffff;
+
+  --color-background: var(--color-page);
+  --color-foreground: var(--color-text);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-text);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-text);
+  --color-primary: var(--color-navy);
+  --color-primary-foreground: var(--color-on-navy);
+  --color-primary-deep: var(--color-navy);
+  --color-secondary: var(--color-navy-tint);
+  --color-secondary-foreground: var(--color-navy);
+  --color-muted: var(--color-surface-2);
+  --color-muted-foreground: var(--color-text-2);
+  --color-accent: var(--color-navy-tint);
+  --color-accent-foreground: var(--color-navy);
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: var(--color-on-navy);
+  --color-success: #16a34a;
+  --color-success-foreground: var(--color-on-navy);
+  --color-warning: #f59e0b;
+  --color-warning-foreground: var(--color-on-navy);
+  --color-border: var(--color-border);
+  --color-input: var(--color-surface);
+  --color-ring: var(--color-navy);
+  --color-ring-offset-background: var(--color-page);
+  --color-sidebar: var(--color-surface);
+  --color-sidebar-foreground: var(--color-text);
+  --color-sidebar-accent: var(--color-navy-tint);
+  --color-sidebar-accent-foreground: var(--color-navy);
+  --color-sidebar-border: var(--color-divider);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* Scrollbar minimalista: pílula fina e arredondada, sem trilho (visual clean). */
+.scrollbar-clean {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-text-2) 40%, transparent) transparent;
+}
+.scrollbar-clean::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-clean::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-clean::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--color-text-2) 38%, transparent);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.scrollbar-clean:hover::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--color-text-2) 62%, transparent);
+}
+
+/* Barra de rolagem da janela: pílula fina e discreta (mesmo espírito do menu). */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-text-2) 32%, transparent) transparent;
+}
+html::-webkit-scrollbar {
+  width: 10px;
+}
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+html::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--color-text-2) 32%, transparent);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+html::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklab, var(--color-text-2) 55%, transparent);
+}
+
+/* Página inicial: sem barra de rolagem visível (mantém o scroll pelo toque/roda). */
+html.home-no-scrollbar {
+  scrollbar-width: none;
+}
+html.home-no-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Impressão / Salvar como PDF: mostra só a área do relatório. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 16px;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
