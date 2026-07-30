@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedCadastrosRouteImport } from './routes/_authenticated/cadastros'
 import { Route as AuthenticatedRotinasRouteImport } from './routes/_authenticated/rotinas'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -28,6 +29,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCadastrosRoute = AuthenticatedCadastrosRouteImport.update({
+  id: '/cadastros',
+  path: '/cadastros',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRotinasRoute = AuthenticatedRotinasRouteImport.update({
   id: '/rotinas',
   path: '/rotinas',
@@ -37,10 +43,12 @@ const AuthenticatedRotinasRoute = AuthenticatedRotinasRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
+  '/cadastros': typeof AuthenticatedCadastrosRoute
   '/rotinas': typeof AuthenticatedRotinasRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
+  '/cadastros': typeof AuthenticatedCadastrosRoute
   '/rotinas': typeof AuthenticatedRotinasRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -48,18 +56,20 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/cadastros': typeof AuthenticatedCadastrosRoute
   '/_authenticated/rotinas': typeof AuthenticatedRotinasRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/rotinas'
+  fullPaths: '/' | '/auth' | '/cadastros' | '/rotinas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/rotinas' | '/'
+  to: '/auth' | '/cadastros' | '/rotinas' | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/cadastros'
     | '/_authenticated/rotinas'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -92,6 +102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cadastros': {
+      id: '/_authenticated/cadastros'
+      path: '/cadastros'
+      fullPath: '/cadastros'
+      preLoaderRoute: typeof AuthenticatedCadastrosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/rotinas': {
       id: '/_authenticated/rotinas'
       path: '/rotinas'
@@ -103,11 +120,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCadastrosRoute: typeof AuthenticatedCadastrosRoute
   AuthenticatedRotinasRoute: typeof AuthenticatedRotinasRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCadastrosRoute: AuthenticatedCadastrosRoute,
   AuthenticatedRotinasRoute: AuthenticatedRotinasRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
