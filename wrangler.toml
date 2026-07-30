@@ -1,3 +1,7 @@
 name = "gestao-pessoal"
-pages_build_output_dir = "dist"
 compatibility_date = "2025-01-01"
+
+[assets]
+directory = "./dist"
+html_handling = "none"
+not_found_handling = "single-page-application"
