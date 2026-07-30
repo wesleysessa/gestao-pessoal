@@ -67,6 +67,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      streak_estado: {
+        Row: {
+          id: string;
+          user_id: string;
+          streak_atual: number;
+          recorde: number;
+          congelamentos_disponiveis: number;
+          ultimo_dia_processado: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          streak_atual?: number;
+          recorde?: number;
+          congelamentos_disponiveis?: number;
+          ultimo_dia_processado?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          streak_atual?: number;
+          recorde?: number;
+          congelamentos_disponiveis?: number;
+          ultimo_dia_processado?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       saude_checkins: {
         Row: {
           id: string;
@@ -135,7 +165,18 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      sync_streak: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: string;
+          user_id: string;
+          streak_atual: number;
+          recorde: number;
+          congelamentos_disponiveis: number;
+          ultimo_dia_processado: string | null;
+          updated_at: string;
+        };
+      };
     };
     Enums: {
       [_ in never]: never;

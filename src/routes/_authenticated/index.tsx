@@ -1,24 +1,55 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { IconFlame, IconSnowflake } from "@tabler/icons-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { hoje } from "@/lib/data";
 import { useVocabulario } from "@/features/vocabulario/hooks";
 import { useDiario } from "@/features/diario/hooks";
 import { useLivros } from "@/features/livros/hooks";
 import { useCheckins } from "@/features/saude/hooks";
+import { useStreak } from "@/features/streak/hooks";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: Home,
 });
+
+const META_DIARIA = 3;
 
 function Home() {
   const { data: vocab = [] } = useVocabulario();
   const { data: diario = [] } = useDiario();
   const { data: livros = [] } = useLivros();
   const { data: checkins = [] } = useCheckins();
+  const { data: streak } = useStreak();
 
-  const checkinFeito = checkins.some((c) => c.data === hoje());
-  const diarioHoje = diario.some((e) => e.data === hoje());
+  const tarefas = [
+    {
+      rotulo: "Vocabulário",
+      feita: vocab.some((v) => v.created_at.slice(0, 10) === hoje()),
+      to: "/vocabulario",
+      acao: "Adicionar palavra",
+    },
+    {
+      rotulo: "Diário",
+      feita: diario.some((e) => e.data === hoje()),
+      to: "/diario",
+      acao: "Escrever",
+    },
+    {
+      rotulo: "Livros",
+      feita: livros.some((l) => l.data === hoje()),
+      to: "/livros",
+      acao: "Registrar",
+    },
+    {
+      rotulo: "Saúde",
+      feita: checkins.some((c) => c.data === hoje()),
+      to: "/saude",
+      acao: "Fazer check-in",
+    },
+  ] as const;
+  const feitasHoje = tarefas.filter((t) => t.feita).length;
 
   const stats = [
     { rotulo: "Palavras no vocabulário", valor: vocab.length, to: "/vocabulario" },
@@ -29,6 +60,34 @@ function Home() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
+      <Card className="mb-5">
+        <CardContent className="flex items-center gap-4 pt-6">
+          <IconFlame
+            className={cn(
+              "size-10 shrink-0",
+              (streak?.streak_atual ?? 0) > 0
+                ? "fill-orange-500 text-orange-500"
+                : "text-muted-foreground/40",
+            )}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="text-2xl font-bold text-foreground">
+              {streak?.streak_atual ?? 0} {streak?.streak_atual === 1 ? "dia" : "dias"} seguidos
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Recorde: {streak?.recorde ?? 0} · hoje: {feitasHoje} de {tarefas.length} (precisa de{" "}
+              {META_DIARIA})
+            </div>
+          </div>
+          {!!streak?.congelamentos_disponiveis && (
+            <div className="flex shrink-0 items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
+              <IconSnowflake className="size-3.5" />
+              {streak.congelamentos_disponiveis}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map((s) => (
           <Link key={s.to} to={s.to}>
@@ -44,26 +103,21 @@ function Home() {
         <CardContent className="pt-6">
           <div className="mb-3 text-base font-semibold text-foreground">Rotina de hoje</div>
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between rounded-md bg-secondary px-3 py-2.5">
-              <span className="text-sm text-foreground">
-                {checkinFeito ? "✓ Check-in de saúde feito" : "○ Check-in de saúde pendente"}
-              </span>
-              {!checkinFeito && (
-                <Button asChild size="sm">
-                  <Link to="/saude">Fazer agora</Link>
-                </Button>
-              )}
-            </div>
-            <div className="flex items-center justify-between rounded-md bg-secondary px-3 py-2.5">
-              <span className="text-sm text-foreground">
-                {diarioHoje ? "✓ Diário escrito hoje" : "○ Diário ainda em branco hoje"}
-              </span>
-              {!diarioHoje && (
-                <Button asChild size="sm">
-                  <Link to="/diario">Escrever</Link>
-                </Button>
-              )}
-            </div>
+            {tarefas.map((t) => (
+              <div
+                key={t.to}
+                className="flex items-center justify-between rounded-md bg-secondary px-3 py-2.5"
+              >
+                <span className="text-sm text-foreground">
+                  {t.feita ? `✓ ${t.rotulo} feito` : `○ ${t.rotulo} pendente`}
+                </span>
+                {!t.feita && (
+                  <Button asChild size="sm">
+                    <Link to={t.to}>{t.acao}</Link>
+                  </Button>
+                )}
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
