@@ -50,6 +50,11 @@ function Home() {
     },
   ] as const;
   const feitasHoje = tarefas.filter((t) => t.feita).length;
+  // A função no banco só fecha a conta de dias passados (hoje ainda pode
+  // mudar). Se a meta de hoje já foi batida, mostra a chama acesa na hora,
+  // sem esperar virar o dia — o valor oficial só é gravado amanhã.
+  const metaBatidaHoje = feitasHoje >= META_DIARIA;
+  const streakExibido = (streak?.streak_atual ?? 0) + (metaBatidaHoje ? 1 : 0);
 
   const stats = [
     { rotulo: "Palavras no vocabulário", valor: vocab.length, to: "/vocabulario" },
@@ -65,14 +70,12 @@ function Home() {
           <IconFlame
             className={cn(
               "size-10 shrink-0",
-              (streak?.streak_atual ?? 0) > 0
-                ? "fill-orange-500 text-orange-500"
-                : "text-muted-foreground/40",
+              streakExibido > 0 ? "fill-orange-500 text-orange-500" : "text-muted-foreground/40",
             )}
           />
           <div className="min-w-0 flex-1">
             <div className="text-2xl font-bold text-foreground">
-              {streak?.streak_atual ?? 0} {streak?.streak_atual === 1 ? "dia" : "dias"} seguidos
+              {streakExibido} {streakExibido === 1 ? "dia" : "dias"} seguidos
             </div>
             <div className="text-xs text-muted-foreground">
               Recorde: {streak?.recorde ?? 0} · hoje: {feitasHoje} de {tarefas.length} (precisa de{" "}
