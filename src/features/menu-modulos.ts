@@ -1,4 +1,11 @@
-import { IconRepeat, IconSettings } from "@tabler/icons-react";
+import {
+  IconRepeat,
+  IconSettings,
+  IconLanguage,
+  IconNotebook,
+  IconBooks,
+  IconHeartbeat,
+} from "@tabler/icons-react";
 import type { AppIcon } from "@/components/app-icon";
 
 export type ModuloMenu = {
@@ -13,5 +20,9 @@ export type ModuloMenu = {
  */
 export const MENU_MODULOS: ModuloMenu[] = [
   { label: "Rotinas", to: "/rotinas", icon: IconRepeat },
+  { label: "Vocabulário", to: "/vocabulario", icon: IconLanguage },
+  { label: "Diário", to: "/diario", icon: IconNotebook },
+  { label: "Livros", to: "/livros", icon: IconBooks },
+  { label: "Saúde", to: "/saude", icon: IconHeartbeat },
   { label: "Cadastros", to: "/cadastros", icon: IconSettings },
 ];
