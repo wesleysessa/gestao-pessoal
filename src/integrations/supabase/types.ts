@@ -59,6 +59,7 @@ export type Database = {
           data: string;
           titulo: string | null;
           texto: string;
+          nota: number | null;
           created_at: string;
         };
         Insert: {
@@ -67,6 +68,7 @@ export type Database = {
           data?: string;
           titulo?: string | null;
           texto: string;
+          nota?: number | null;
           created_at?: string;
         };
         Update: {
@@ -75,6 +77,7 @@ export type Database = {
           data?: string;
           titulo?: string | null;
           texto?: string;
+          nota?: number | null;
           created_at?: string;
         };
         Relationships: [];

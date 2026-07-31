@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { IconNotebook, IconTrash } from "@tabler/icons-react";
+import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { SectionHeader } from "@/components/ds";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { StarRating } from "@/components/star-rating";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { fmtData, hoje } from "@/lib/data";
 import {
   useCreateEntradaDiario,
@@ -21,6 +29,21 @@ export const Route = createFileRoute("/_authenticated/diario")({
   component: Diario,
 });
 
+const notaChartConfig = {
+  nota: { label: "Nota do dia", color: "var(--color-primary)" },
+} satisfies ChartConfig;
+
+/** Dias do mês corrente, do dia 1 até hoje (dias futuros não têm dado). */
+function diasDoMesAteHoje(): string[] {
+  const hojeDate = new Date();
+  const dias: string[] = [];
+  for (let d = 1; d <= hojeDate.getDate(); d++) {
+    const dt = new Date(hojeDate.getFullYear(), hojeDate.getMonth(), d);
+    dias.push(dt.toISOString().slice(0, 10));
+  }
+  return dias;
+}
+
 function Diario() {
   const { data: entradas = [], isLoading } = useDiario();
   const criar = useCreateEntradaDiario();
@@ -30,11 +53,13 @@ function Diario() {
   const [editando, setEditando] = useState<EntradaDiario | null>(null);
   const [titulo, setTitulo] = useState("");
   const [texto, setTexto] = useState("");
+  const [nota, setNota] = useState(0);
 
   function iniciarEdicao(e: EntradaDiario) {
     setEditando(e);
     setTitulo(e.titulo ?? "");
     setTexto(e.texto);
+    setNota(e.nota ?? 0);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -42,11 +67,16 @@ function Diario() {
     setEditando(null);
     setTitulo("");
     setTexto("");
+    setNota(0);
   }
 
   function salvar() {
     if (!texto.trim()) return;
-    const input = { titulo: titulo.trim() || null, texto: texto.trim() };
+    const input = {
+      titulo: titulo.trim() || null,
+      texto: texto.trim(),
+      nota: nota > 0 ? nota : null,
+    };
     if (editando) {
       atualizar.mutate(
         { id: editando.id, input },
@@ -57,10 +87,7 @@ function Diario() {
       );
     } else {
       criar.mutate(input, {
-        onSuccess: () => {
-          setTitulo("");
-          setTexto("");
-        },
+        onSuccess: cancelarEdicao,
         onError: (e: Error) => toast.error(e.message),
       });
     }
@@ -73,6 +100,31 @@ function Diario() {
   }
 
   const salvando = criar.isPending || atualizar.isPending;
+
+  const notaPorDia = useMemo(() => {
+    const somas = new Map<string, { soma: number; qtd: number }>();
+    for (const e of entradas) {
+      if (e.nota == null) continue;
+      const atual = somas.get(e.data) ?? { soma: 0, qtd: 0 };
+      atual.soma += e.nota;
+      atual.qtd += 1;
+      somas.set(e.data, atual);
+    }
+    const medias = new Map<string, number>();
+    for (const [data, { soma, qtd }] of somas) medias.set(data, soma / qtd);
+    return medias;
+  }, [entradas]);
+
+  const dadosGrafico = useMemo(
+    () => diasDoMesAteHoje().map((data) => ({ data, nota: notaPorDia.get(data) })),
+    [notaPorDia],
+  );
+
+  const mediaDoMes = useMemo(() => {
+    const valores = [...notaPorDia.values()];
+    if (valores.length === 0) return null;
+    return valores.reduce((a, b) => a + b, 0) / valores.length;
+  }, [notaPorDia]);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
@@ -100,6 +152,10 @@ function Diario() {
               className="min-h-[120px]"
             />
           </div>
+          <div className="mb-3 space-y-1.5">
+            <Label>Nota de produtividade (opcional)</Label>
+            <StarRating value={nota} onChange={setNota} size={24} />
+          </div>
           <div className="flex gap-2">
             <Button onClick={salvar} disabled={salvando}>
               {salvando ? "Salvando…" : editando ? "Salvar alterações" : "Guardar entrada"}
@@ -112,6 +168,63 @@ function Diario() {
           </div>
         </CardContent>
       </Card>
+
+      {mediaDoMes != null && (
+        <Card className="mb-5">
+          <CardContent className="pt-6">
+            <div className="mb-3.5 flex items-center justify-between gap-2">
+              <div className="text-sm font-semibold text-foreground">Produtividade — mês atual</div>
+              <div className="text-sm font-semibold text-primary">
+                Média {mediaDoMes.toFixed(1)}
+              </div>
+            </div>
+            <ChartContainer config={notaChartConfig} className="h-48 w-full">
+              <LineChart data={dadosGrafico} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="data"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(v: string) => v.slice(8, 10)}
+                  minTickGap={16}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 11 }}
+                  width={24}
+                  domain={[0, 5]}
+                  ticks={[1, 2, 3, 4, 5]}
+                />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      labelFormatter={(v: string) => fmtData(v as string)}
+                      indicator="line"
+                    />
+                  }
+                />
+                <ReferenceLine
+                  y={mediaDoMes}
+                  stroke="var(--color-muted-foreground)"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 4"
+                />
+                <Line
+                  dataKey="nota"
+                  type="monotone"
+                  stroke="var(--color-nota)"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                  connectNulls
+                />
+              </LineChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      )}
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
@@ -148,6 +261,11 @@ function Diario() {
                     <IconTrash className="size-4" />
                   </button>
                 </div>
+                {e.nota != null && (
+                  <div className="mt-1.5">
+                    <StarRating value={e.nota} size={14} />
+                  </div>
+                )}
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
                   {e.texto}
                 </p>
