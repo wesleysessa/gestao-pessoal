@@ -28,6 +28,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      agua_metas: {
+        Row: {
+          id: string;
+          user_id: string;
+          quantidade_ml: number;
+          vigente_desde: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          quantidade_ml: number;
+          vigente_desde?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          quantidade_ml?: number;
+          vigente_desde?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       diario: {
         Row: {
           id: string;
