@@ -5,6 +5,7 @@ import {
   IconNotebook,
   IconBooks,
   IconHeartbeat,
+  IconBulb,
 } from "@tabler/icons-react";
 import type { AppIcon } from "@/components/app-icon";
 
@@ -24,5 +25,6 @@ export const MENU_MODULOS: ModuloMenu[] = [
   { label: "Diário", to: "/diario", icon: IconNotebook },
   { label: "Livros", to: "/livros", icon: IconBooks },
   { label: "Saúde", to: "/saude", icon: IconHeartbeat },
+  { label: "Melhorias", to: "/melhorias", icon: IconBulb },
   { label: "Cadastros", to: "/cadastros", icon: IconSettings },
 ];

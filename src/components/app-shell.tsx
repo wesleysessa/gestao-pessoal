@@ -26,6 +26,14 @@ import { MENU_MODULOS } from "@/features/menu-modulos";
 
 const drawerSections = [{ label: "Início", to: "/", icon: IconHome }, ...MENU_MODULOS];
 
+/** Abas fixas do rodapé — os demais módulos continuam acessíveis pelo menu. */
+const BOTTOM_NAV_PATHS = ["/", "/diario", "/saude", "/melhorias"];
+const bottomItems = BOTTOM_NAV_PATHS.map((path) =>
+  path === "/"
+    ? { label: "Início", to: "/", icon: IconHome }
+    : MENU_MODULOS.find((m) => m.to === path)!,
+);
+
 const barIcon = "text-[#44515E] dark:text-muted-foreground hover:bg-muted";
 
 function sectionTitle(pathname: string): string {
@@ -58,6 +66,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const isActive = (to: string) =>
     to === "/" ? pathname === "/" : pathname === to || pathname.startsWith(to + "/");
+  // Trocar de aba substitui o histórico (não empilha) — só quando já se está
+  // numa aba, pra "voltar" a partir de uma tela interna continuar normal.
+  const emAlgumaAba = bottomItems.some((b) => isActive(b.to));
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -197,7 +208,33 @@ export function AppShell({ children }: { children: ReactNode }) {
       <ChangePasswordDialog open={pwdOpen} onOpenChange={setPwdOpen} />
       <InstallDialog open={installOpen} onOpenChange={setInstallOpen} />
 
-      <main className="flex-1 overflow-x-hidden pb-6">{children}</main>
+      <main className="flex-1 overflow-x-hidden pb-24">{children}</main>
+
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-divider bg-card shadow-elevated dark:border-border">
+        <ul
+          className="mx-auto grid max-w-2xl"
+          style={{ gridTemplateColumns: `repeat(${bottomItems.length}, minmax(0, 1fr))` }}
+        >
+          {bottomItems.map((item) => {
+            const active = isActive(item.to);
+            return (
+              <li key={item.to}>
+                <Link
+                  to={item.to}
+                  replace={emAlgumaAba}
+                  className={cn(
+                    "flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors",
+                    active ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <item.icon className="size-5" stroke={active ? 2 : 1.75} />
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
     </div>
   );
 }

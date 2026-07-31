@@ -7,6 +7,36 @@ export type Database = {
   };
   public: {
     Tables: {
+      melhorias: {
+        Row: {
+          id: string;
+          user_id: string;
+          titulo: string;
+          descricao: string | null;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          titulo: string;
+          descricao?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          titulo?: string;
+          descricao?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       agua_registros: {
         Row: {
           id: string;
