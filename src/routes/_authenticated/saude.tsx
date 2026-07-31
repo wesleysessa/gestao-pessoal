@@ -1,15 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
-import { IconHeartbeat } from "@tabler/icons-react";
+import { IconHeartbeat, IconDroplet, IconX } from "@tabler/icons-react";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { SectionHeader } from "@/components/ds";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import { fmtData, hoje } from "@/lib/data";
 import { useCheckins, useUpsertCheckinHoje } from "@/features/saude/hooks";
+import { useAgua, useCreateRegistroAgua, useDeleteRegistroAgua } from "@/features/agua/hooks";
 
 export const Route = createFileRoute("/_authenticated/saude")({
   component: Saude,
@@ -44,6 +52,159 @@ function Escala({
         </button>
       ))}
     </div>
+  );
+}
+
+function ultimosNDias(n: number): string[] {
+  const dias: string[] = [];
+  const base = new Date();
+  for (let i = n - 1; i >= 0; i--) {
+    const dt = new Date(base);
+    dt.setDate(base.getDate() - i);
+    dias.push(dt.toISOString().slice(0, 10));
+  }
+  return dias;
+}
+
+const aguaChartConfig = {
+  ml: { label: "Água (ml)", color: "var(--color-primary)" },
+} satisfies ChartConfig;
+
+const QUANTIDADES_RAPIDAS = [200, 300, 500];
+
+function SecaoAgua() {
+  const { data: registros = [] } = useAgua();
+  const adicionar = useCreateRegistroAgua();
+  const remover = useDeleteRegistroAgua();
+  const [quantidadeCustom, setQuantidadeCustom] = useState("");
+
+  const totalPorDia = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of registros) {
+      const dia = r.registrado_em.slice(0, 10);
+      map.set(dia, (map.get(dia) ?? 0) + r.quantidade_ml);
+    }
+    return map;
+  }, [registros]);
+
+  const dadosGrafico = useMemo(
+    () => ultimosNDias(14).map((data) => ({ data, ml: totalPorDia.get(data) ?? 0 })),
+    [totalPorDia],
+  );
+
+  const totalHoje = totalPorDia.get(hoje()) ?? 0;
+  const registrosHoje = registros.filter((r) => r.registrado_em.slice(0, 10) === hoje());
+
+  function adicionarQuantidade(ml: number) {
+    if (ml <= 0) return;
+    adicionar.mutate(ml, { onError: (e: Error) => toast.error(e.message) });
+  }
+
+  return (
+    <Card className="mb-5">
+      <CardContent className="pt-6">
+        <div className="mb-3.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-base font-semibold text-foreground">
+            <IconDroplet className="size-5 text-primary" />
+            Água
+          </div>
+          <div className="text-sm font-semibold text-primary">
+            {totalHoje.toLocaleString("pt-BR")} ml hoje
+          </div>
+        </div>
+
+        <div className="mb-3 flex flex-wrap gap-2">
+          {QUANTIDADES_RAPIDAS.map((ml) => (
+            <Button key={ml} variant="outline" size="sm" onClick={() => adicionarQuantidade(ml)}>
+              + {ml} ml
+            </Button>
+          ))}
+          <div className="flex items-center gap-1.5">
+            <Input
+              type="number"
+              min={1}
+              value={quantidadeCustom}
+              onChange={(e) => setQuantidadeCustom(e.target.value)}
+              placeholder="ml"
+              className="h-8 w-20"
+            />
+            <Button
+              size="sm"
+              disabled={!quantidadeCustom || Number(quantidadeCustom) <= 0}
+              onClick={() => {
+                adicionarQuantidade(Number(quantidadeCustom));
+                setQuantidadeCustom("");
+              }}
+            >
+              Adicionar
+            </Button>
+          </div>
+        </div>
+
+        {registrosHoje.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-1.5">
+            {registrosHoje.map((r) => (
+              <span
+                key={r.id}
+                className="flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground"
+              >
+                {r.quantidade_ml} ml ·{" "}
+                {new Date(r.registrado_em).toLocaleTimeString("pt-BR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+                <button
+                  onClick={() =>
+                    remover.mutate(r.id, { onError: (e: Error) => toast.error(e.message) })
+                  }
+                  aria-label="Excluir"
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <IconX className="size-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <ChartContainer config={aguaChartConfig} className="h-48 w-full">
+          <LineChart data={dadosGrafico} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="data"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fontSize: 11 }}
+              tickFormatter={(v: string) => v.slice(8, 10) + "/" + v.slice(5, 7)}
+              minTickGap={24}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tick={{ fontSize: 11 }}
+              width={36}
+              tickFormatter={(v: number) => v.toLocaleString("pt-BR")}
+            />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  labelFormatter={(v: string) => fmtData(v as string)}
+                  indicator="line"
+                />
+              }
+            />
+            <Line
+              dataKey="ml"
+              type="monotone"
+              stroke="var(--color-ml)"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4 }}
+            />
+          </LineChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -137,6 +298,8 @@ function Saude() {
           </Button>
         </CardContent>
       </Card>
+
+      <SecaoAgua />
 
       {ultimos14.length > 1 && (
         <Card className="mb-5">
