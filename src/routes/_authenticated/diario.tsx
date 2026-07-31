@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { IconNotebook, IconTrash } from "@tabler/icons-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { IconCamera, IconNotebook, IconPhoto, IconTrash, IconX } from "@tabler/icons-react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { SectionHeader } from "@/components/ds";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StarRating } from "@/components/star-rating";
 import {
   ChartContainer,
@@ -17,13 +18,19 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { fmtData, hoje } from "@/lib/data";
+import { useSignedUrl } from "@/lib/use-signed-url";
+import { useCurrentProfile } from "@/features/auth/use-current-profile";
 import {
   useCreateEntradaDiario,
   useDeleteEntradaDiario,
+  useDeleteFotoEntrada,
   useDiario,
+  useFotosEntrada,
   useUpdateEntradaDiario,
+  useUploadFotoEntrada,
 } from "@/features/diario/hooks";
-import type { EntradaDiario } from "@/features/diario/types";
+import { FOTOS_BUCKET } from "@/features/diario/service";
+import type { EntradaDiario, FotoDiario } from "@/features/diario/types";
 
 export const Route = createFileRoute("/_authenticated/diario")({
   component: Diario,
@@ -44,22 +51,135 @@ function diasDoMesAteHoje(): string[] {
   return dias;
 }
 
+/** Tira/faixa de miniaturas do dia — clique abre a galeria completa em dialog. */
+function FotosDoDia({ entradaId }: { entradaId: string }) {
+  const { data: fotos = [] } = useFotosEntrada(entradaId);
+  const remover = useDeleteFotoEntrada();
+  const [aberto, setAberto] = useState(false);
+
+  if (fotos.length === 0) return null;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setAberto(true);
+        }}
+        className="mt-2 flex items-center gap-1.5"
+      >
+        <div className="flex -space-x-2">
+          {fotos.slice(0, 4).map((f) => (
+            <div
+              key={f.id}
+              className="size-9 overflow-hidden rounded-md border-2 border-card bg-muted"
+            >
+              <FotoThumbInner path={f.storage_path} />
+            </div>
+          ))}
+        </div>
+        <span className="text-xs text-muted-foreground">
+          <IconPhoto className="inline size-3.5 align-text-bottom" /> {fotos.length}
+        </span>
+      </button>
+
+      <Dialog open={aberto} onOpenChange={setAberto}>
+        <DialogContent className="max-w-lg" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>Fotos — {fmtData(hoje())}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-3 gap-2">
+            {fotos.map((f) => (
+              <div
+                key={f.id}
+                className="group relative aspect-square overflow-hidden rounded-md bg-muted"
+              >
+                <FotoThumbInner path={f.storage_path} />
+                <button
+                  onClick={() =>
+                    remover.mutate(
+                      { id: f.id, storagePath: f.storage_path, entradaId },
+                      { onError: (e: Error) => toast.error(e.message) },
+                    )
+                  }
+                  aria-label="Excluir foto"
+                  className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                >
+                  <IconX className="size-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function FotoThumbInner({ path }: { path: string }) {
+  const { data: url } = useSignedUrl(FOTOS_BUCKET, path);
+  return url ? (
+    <img src={url} alt="" className="size-full object-cover" />
+  ) : (
+    <div className="size-full animate-pulse bg-muted" />
+  );
+}
+
+/** Fotos já salvas de uma entrada em edição — removíveis direto. */
+function FotosExistentes({ entradaId }: { entradaId: string }) {
+  const { data: fotos = [] } = useFotosEntrada(entradaId);
+  const remover = useDeleteFotoEntrada();
+
+  if (fotos.length === 0) return null;
+
+  return (
+    <div className="mb-3 flex flex-wrap gap-2">
+      {fotos.map((f: FotoDiario) => (
+        <div key={f.id} className="group relative size-16 overflow-hidden rounded-md bg-muted">
+          <FotoThumbInner path={f.storage_path} />
+          <button
+            onClick={() =>
+              remover.mutate(
+                { id: f.id, storagePath: f.storage_path, entradaId },
+                { onError: (e: Error) => toast.error(e.message) },
+              )
+            }
+            aria-label="Excluir foto"
+            className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+          >
+            <IconX className="size-3" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Diario() {
   const { data: entradas = [], isLoading } = useDiario();
+  const { data: profile } = useCurrentProfile();
   const criar = useCreateEntradaDiario();
   const atualizar = useUpdateEntradaDiario();
   const remover = useDeleteEntradaDiario();
+  const enviarFoto = useUploadFotoEntrada();
 
   const [editando, setEditando] = useState<EntradaDiario | null>(null);
   const [titulo, setTitulo] = useState("");
   const [texto, setTexto] = useState("");
   const [nota, setNota] = useState(0);
+  const [novasFotos, setNovasFotos] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const previews = useMemo(() => novasFotos.map((f) => URL.createObjectURL(f)), [novasFotos]);
+  useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
 
   function iniciarEdicao(e: EntradaDiario) {
     setEditando(e);
     setTitulo(e.titulo ?? "");
     setTexto(e.texto);
     setNota(e.nota ?? 0);
+    setNovasFotos([]);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -68,6 +188,18 @@ function Diario() {
     setTitulo("");
     setTexto("");
     setNota(0);
+    setNovasFotos([]);
+  }
+
+  async function enviarFotosPendentes(entradaId: string) {
+    if (novasFotos.length === 0 || !profile) return;
+    for (const file of novasFotos) {
+      try {
+        await enviarFoto.mutateAsync({ entradaId, userId: profile.id, file });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Falha ao enviar foto");
+      }
+    }
   }
 
   function salvar() {
@@ -81,13 +213,19 @@ function Diario() {
       atualizar.mutate(
         { id: editando.id, input },
         {
-          onSuccess: cancelarEdicao,
+          onSuccess: async () => {
+            await enviarFotosPendentes(editando.id);
+            cancelarEdicao();
+          },
           onError: (e: Error) => toast.error(e.message),
         },
       );
     } else {
       criar.mutate(input, {
-        onSuccess: cancelarEdicao,
+        onSuccess: async (nova) => {
+          await enviarFotosPendentes(nova.id);
+          cancelarEdicao();
+        },
         onError: (e: Error) => toast.error(e.message),
       });
     }
@@ -99,7 +237,7 @@ function Diario() {
     remover.mutate(id, { onError: (err: Error) => toast.error(err.message) });
   }
 
-  const salvando = criar.isPending || atualizar.isPending;
+  const salvando = criar.isPending || atualizar.isPending || enviarFoto.isPending;
 
   const notaPorDia = useMemo(() => {
     const somas = new Map<string, { soma: number; qtd: number }>();
@@ -156,6 +294,51 @@ function Diario() {
             <Label>Nota de produtividade (opcional)</Label>
             <StarRating value={nota} onChange={setNota} size={24} />
           </div>
+
+          <div className="mb-3 space-y-1.5">
+            <Label>Fotos</Label>
+            {editando && <FotosExistentes entradaId={editando.id} />}
+            {previews.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {previews.map((url, i) => (
+                  <div
+                    key={url}
+                    className="group relative size-16 overflow-hidden rounded-md bg-muted"
+                  >
+                    <img src={url} alt="" className="size-full object-cover" />
+                    <button
+                      onClick={() => setNovasFotos((fs) => fs.filter((_, idx) => idx !== i))}
+                      aria-label="Remover"
+                      className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+                    >
+                      <IconX className="size-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                const files = Array.from(e.target.files ?? []);
+                setNovasFotos((fs) => [...fs, ...files]);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <IconCamera className="size-4" /> Adicionar fotos
+            </Button>
+          </div>
+
           <div className="flex gap-2">
             <Button onClick={salvar} disabled={salvando}>
               {salvando ? "Salvando…" : editando ? "Salvar alterações" : "Guardar entrada"}
@@ -269,6 +452,7 @@ function Diario() {
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
                   {e.texto}
                 </p>
+                <FotosDoDia entradaId={e.id} />
               </CardContent>
             </Card>
           ))}

@@ -6,3 +6,5 @@ export type NovaEntradaDiario = Pick<
   Database["public"]["Tables"]["diario"]["Insert"],
   "titulo" | "texto" | "nota"
 >;
+
+export type FotoDiario = Database["public"]["Tables"]["diario_fotos"]["Row"];
