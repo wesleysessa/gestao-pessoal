@@ -56,10 +56,10 @@ function Home() {
   const streakExibido = (streak?.streak_atual ?? 0) + (metaBatidaHoje ? 1 : 0);
 
   const stats = [
-    { rotulo: "Palavras no vocabulário", valor: vocab.length, to: "/vocabulario" },
-    { rotulo: "Entradas no diário", valor: diario.length, to: "/diario" },
-    { rotulo: "Livros lidos", valor: livros.length, to: "/livros" },
-    { rotulo: "Check-ins de saúde", valor: checkins.length, to: "/saude" },
+    { rotulo: "Vocabulário", valor: vocab.length, to: "/vocabulario" },
+    { rotulo: "Diário", valor: diario.length, to: "/diario" },
+    { rotulo: "Livros", valor: livros.length, to: "/livros" },
+    { rotulo: "Check-in Saúde", valor: checkins.length, to: "/saude" },
   ] as const;
 
   return (
