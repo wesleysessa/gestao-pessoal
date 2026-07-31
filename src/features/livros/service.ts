@@ -16,6 +16,11 @@ export async function createLivro(input: NovoLivro) {
   if (error) throw error;
 }
 
+export async function updateLivro(id: string, input: NovoLivro) {
+  const { error } = await supabase.from("livros").update(input).eq("id", id);
+  if (error) throw error;
+}
+
 export async function deleteLivro(id: string) {
   const { error } = await supabase.from("livros").delete().eq("id", id);
   if (error) throw error;

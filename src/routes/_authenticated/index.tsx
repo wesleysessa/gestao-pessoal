@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { IconFlame, IconSnowflake } from "@tabler/icons-react";
+import { IconFlame, IconSnowflake, IconChevronRight } from "@tabler/icons-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { hoje } from "@/lib/data";
 import { useVocabulario } from "@/features/vocabulario/hooks";
@@ -107,19 +106,16 @@ function Home() {
           <div className="mb-3 text-base font-semibold text-foreground">Rotina de hoje</div>
           <div className="flex flex-col gap-2">
             {tarefas.map((t) => (
-              <div
+              <Link
                 key={t.to}
-                className="flex items-center justify-between rounded-md bg-secondary px-3 py-2.5"
+                to={t.to}
+                className="flex items-center justify-between rounded-md bg-secondary px-3 py-2.5 transition hover:bg-secondary/70"
               >
                 <span className="text-sm text-foreground">
-                  {t.feita ? `✓ ${t.rotulo} feito` : `○ ${t.rotulo} pendente`}
+                  {t.feita ? `✓ ${t.rotulo} feito` : `○ ${t.rotulo} pendente — ${t.acao}`}
                 </span>
-                {!t.feita && (
-                  <Button asChild size="sm">
-                    <Link to={t.to}>{t.acao}</Link>
-                  </Button>
-                )}
-              </div>
+                <IconChevronRight className="size-4 text-muted-foreground" />
+              </Link>
             ))}
           </div>
         </CardContent>

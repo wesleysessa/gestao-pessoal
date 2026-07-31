@@ -9,7 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { fmtData, hoje } from "@/lib/data";
-import { useCreateEntradaDiario, useDeleteEntradaDiario, useDiario } from "@/features/diario/hooks";
+import {
+  useCreateEntradaDiario,
+  useDeleteEntradaDiario,
+  useDiario,
+  useUpdateEntradaDiario,
+} from "@/features/diario/hooks";
+import type { EntradaDiario } from "@/features/diario/types";
 
 export const Route = createFileRoute("/_authenticated/diario")({
   component: Diario,
@@ -18,28 +24,55 @@ export const Route = createFileRoute("/_authenticated/diario")({
 function Diario() {
   const { data: entradas = [], isLoading } = useDiario();
   const criar = useCreateEntradaDiario();
+  const atualizar = useUpdateEntradaDiario();
   const remover = useDeleteEntradaDiario();
 
+  const [editando, setEditando] = useState<EntradaDiario | null>(null);
   const [titulo, setTitulo] = useState("");
   const [texto, setTexto] = useState("");
 
-  function adicionar() {
+  function iniciarEdicao(e: EntradaDiario) {
+    setEditando(e);
+    setTitulo(e.titulo ?? "");
+    setTexto(e.texto);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelarEdicao() {
+    setEditando(null);
+    setTitulo("");
+    setTexto("");
+  }
+
+  function salvar() {
     if (!texto.trim()) return;
-    criar.mutate(
-      { titulo: titulo.trim() || null, texto: texto.trim() },
-      {
+    const input = { titulo: titulo.trim() || null, texto: texto.trim() };
+    if (editando) {
+      atualizar.mutate(
+        { id: editando.id, input },
+        {
+          onSuccess: cancelarEdicao,
+          onError: (e: Error) => toast.error(e.message),
+        },
+      );
+    } else {
+      criar.mutate(input, {
         onSuccess: () => {
           setTitulo("");
           setTexto("");
         },
         onError: (e: Error) => toast.error(e.message),
-      },
-    );
+      });
+    }
   }
 
-  function excluir(id: string) {
-    remover.mutate(id, { onError: (e: Error) => toast.error(e.message) });
+  function excluir(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (editando?.id === id) cancelarEdicao();
+    remover.mutate(id, { onError: (err: Error) => toast.error(err.message) });
   }
+
+  const salvando = criar.isPending || atualizar.isPending;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
@@ -48,7 +81,11 @@ function Diario() {
       <Card className="mb-5">
         <CardContent className="pt-6">
           <div className="mb-3 space-y-1.5">
-            <Label>Entrada de {fmtData(hoje())}</Label>
+            <Label>
+              {editando
+                ? `Editando entrada de ${fmtData(editando.data)}`
+                : `Entrada de ${fmtData(hoje())}`}
+            </Label>
             <Input
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
@@ -63,9 +100,16 @@ function Diario() {
               className="min-h-[120px]"
             />
           </div>
-          <Button onClick={adicionar} disabled={criar.isPending}>
-            {criar.isPending ? "Guardando…" : "Guardar entrada"}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={salvar} disabled={salvando}>
+              {salvando ? "Salvando…" : editando ? "Salvar alterações" : "Guardar entrada"}
+            </Button>
+            {editando && (
+              <Button variant="ghost" onClick={cancelarEdicao}>
+                Cancelar
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -79,7 +123,15 @@ function Diario() {
       ) : (
         <div className="flex flex-col gap-3">
           {entradas.map((e) => (
-            <Card key={e.id}>
+            <Card
+              key={e.id}
+              onClick={() => iniciarEdicao(e)}
+              className={
+                editando?.id === e.id
+                  ? "cursor-pointer border-primary"
+                  : "cursor-pointer transition hover:border-muted-foreground/40"
+              }
+            >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -89,7 +141,7 @@ function Diario() {
                     )}
                   </div>
                   <button
-                    onClick={() => excluir(e.id)}
+                    onClick={(ev) => excluir(e.id, ev)}
                     aria-label="Excluir"
                     className="shrink-0 text-muted-foreground transition hover:text-destructive"
                   >

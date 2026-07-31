@@ -16,6 +16,11 @@ export async function createEntradaDiario(input: NovaEntradaDiario) {
   if (error) throw error;
 }
 
+export async function updateEntradaDiario(id: string, input: NovaEntradaDiario) {
+  const { error } = await supabase.from("diario").update(input).eq("id", id);
+  if (error) throw error;
+}
+
 export async function deleteEntradaDiario(id: string) {
   const { error } = await supabase.from("diario").delete().eq("id", id);
   if (error) throw error;

@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createEntradaDiario, deleteEntradaDiario, listDiario } from "./service";
+import {
+  createEntradaDiario,
+  deleteEntradaDiario,
+  listDiario,
+  updateEntradaDiario,
+} from "./service";
 import type { NovaEntradaDiario } from "./types";
 
 const KEY = ["diario"];
@@ -12,6 +17,15 @@ export function useCreateEntradaDiario() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: NovaEntradaDiario) => createEntradaDiario(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+export function useUpdateEntradaDiario() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: NovaEntradaDiario }) =>
+      updateEntradaDiario(id, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });
 }

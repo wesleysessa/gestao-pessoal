@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createLivro, deleteLivro, listLivros } from "./service";
+import { createLivro, deleteLivro, listLivros, updateLivro } from "./service";
 import type { NovoLivro } from "./types";
 
 const KEY = ["livros"];
@@ -12,6 +12,14 @@ export function useCreateLivro() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: NovoLivro) => createLivro(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+export function useUpdateLivro() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: NovoLivro }) => updateLivro(id, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });
 }
