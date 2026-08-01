@@ -20,10 +20,38 @@ function Home() {
   const { tarefas } = useStreakResumo();
 
   const stats = [
-    { rotulo: "Vocabulário", valor: vocab.length, to: "/vocabulario" },
-    { rotulo: "Diário", valor: diario.length, to: "/diario" },
-    { rotulo: "Livros", valor: livros.length, to: "/livros" },
-    { rotulo: "Check-in Saúde", valor: checkins.length, to: "/saude" },
+    {
+      rotulo: "Vocabulário",
+      valor: vocab.length,
+      to: "/vocabulario",
+      bg: "bg-violet-50 dark:bg-violet-950/40",
+      border: "border-violet-200 dark:border-violet-900",
+      numero: "text-violet-600 dark:text-violet-400",
+    },
+    {
+      rotulo: "Diário",
+      valor: diario.length,
+      to: "/diario",
+      bg: "bg-amber-50 dark:bg-amber-950/40",
+      border: "border-amber-200 dark:border-amber-900",
+      numero: "text-amber-600 dark:text-amber-400",
+    },
+    {
+      rotulo: "Livros",
+      valor: livros.length,
+      to: "/livros",
+      bg: "bg-blue-50 dark:bg-blue-950/40",
+      border: "border-blue-200 dark:border-blue-900",
+      numero: "text-blue-600 dark:text-blue-400",
+    },
+    {
+      rotulo: "Check-in Saúde",
+      valor: checkins.length,
+      to: "/saude",
+      bg: "bg-green-50 dark:bg-green-950/40",
+      border: "border-green-200 dark:border-green-900",
+      numero: "text-green-600 dark:text-green-400",
+    },
   ] as const;
 
   return (
@@ -33,8 +61,8 @@ function Home() {
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map((s) => (
           <Link key={s.to} to={s.to}>
-            <Card className="p-4">
-              <div className="text-3xl font-bold text-primary">{s.valor}</div>
+            <Card className={`p-4 ${s.bg} ${s.border}`}>
+              <div className={`text-3xl font-bold ${s.numero}`}>{s.valor}</div>
               <div className="text-xs text-muted-foreground">{s.rotulo}</div>
             </Card>
           </Link>
