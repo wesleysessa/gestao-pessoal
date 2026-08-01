@@ -11,6 +11,7 @@ import {
   IconMoon,
   IconDeviceDesktop,
   IconDeviceMobilePlus,
+  IconFlame,
 } from "@tabler/icons-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,8 @@ import { ChangePasswordDialog } from "@/features/auth/change-password-dialog";
 import { InstallDialog } from "@/features/pwa/install-dialog";
 import { usePwaInstall } from "@/features/pwa/use-pwa-install";
 import { useCurrentProfile } from "@/features/auth/use-current-profile";
+import { useStreakResumo } from "@/features/streak/hooks";
+import { StreakCalendarDialog } from "@/components/streak-calendar";
 import { MENU_MODULOS } from "@/features/menu-modulos";
 
 const drawerSections = [{ label: "Início", to: "/", icon: IconHome }, ...MENU_MODULOS];
@@ -53,7 +56,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   useIdleLogout(); // desloga após 24h de inatividade (ou 7 dias com "manter conectado")
   const [pwdOpen, setPwdOpen] = useState(false);
   const [installOpen, setInstallOpen] = useState(false);
+  const [calendarioAberto, setCalendarioAberto] = useState(false);
   const { isStandalone } = usePwaInstall();
+  const { streakExibido } = useStreakResumo();
 
   const isRoot = pathname === "/";
   const tituloSecao = sectionTitle(pathname);
@@ -203,10 +208,26 @@ export function AppShell({ children }: { children: ReactNode }) {
             {tituloSecao}
           </button>
         )}
+
+        <button
+          type="button"
+          onClick={() => setCalendarioAberto(true)}
+          aria-label="Chama e calendário de ofensiva"
+          className="flex shrink-0 items-center gap-1 rounded-full px-2 py-1 transition hover:bg-muted"
+        >
+          <IconFlame
+            className={cn(
+              "size-5",
+              streakExibido > 0 ? "fill-orange-500 text-orange-500" : "text-muted-foreground/40",
+            )}
+          />
+          <span className="text-sm font-semibold text-foreground">{streakExibido}</span>
+        </button>
       </header>
 
       <ChangePasswordDialog open={pwdOpen} onOpenChange={setPwdOpen} />
       <InstallDialog open={installOpen} onOpenChange={setInstallOpen} />
+      <StreakCalendarDialog open={calendarioAberto} onOpenChange={setCalendarioAberto} />
 
       <main className="flex-1 overflow-x-hidden pb-24">{children}</main>
 
