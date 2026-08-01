@@ -52,7 +52,7 @@ function Home() {
                 className="flex items-center justify-between rounded-md bg-secondary px-3 py-2.5 transition hover:bg-secondary/70"
               >
                 <span className="text-sm text-foreground">
-                  {t.feita ? `✓ ${t.rotulo} feito` : `○ ${t.rotulo} pendente — ${t.acao}`}
+                  {t.feita ? "✓" : "○"} {t.rotulo}
                 </span>
                 <IconChevronRight className="size-4 text-muted-foreground" />
               </Link>

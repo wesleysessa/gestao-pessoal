@@ -45,7 +45,7 @@ export function useStreakResumo() {
       acao: "Registrar",
     },
     {
-      rotulo: "Saúde",
+      rotulo: "Check-in Saúde",
       feita: checkins.some((c) => c.data === hoje()),
       to: "/saude",
       acao: "Fazer check-in",
