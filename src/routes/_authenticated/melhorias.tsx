@@ -252,6 +252,7 @@ function Melhorias() {
 
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState<"todos" | StatusMelhoria>("sugerido");
+  const [tipoFiltro, setTipoFiltro] = useState<"todos" | TipoMelhoria>("todos");
   const [de, setDe] = useState("");
   const [ate, setAte] = useState("");
 
@@ -345,16 +346,33 @@ function Melhorias() {
     });
   }, [melhorias, busca, de, ate]);
 
-  const contagem = {
-    todos: filtradasPorBuscaEData.length,
-    sugerido: filtradasPorBuscaEData.filter((m) => m.status === "sugerido").length,
-    em_funcionamento: filtradasPorBuscaEData.filter((m) => m.status === "em_funcionamento").length,
-  };
+  const filtradasPorTipo =
+    tipoFiltro === "todos"
+      ? filtradasPorBuscaEData
+      : filtradasPorBuscaEData.filter((m) => m.tipo === tipoFiltro);
 
-  const visiveis =
+  const filtradasPorStatus =
     statusFiltro === "todos"
       ? filtradasPorBuscaEData
       : filtradasPorBuscaEData.filter((m) => m.status === statusFiltro);
+
+  const contagem = {
+    todos: filtradasPorTipo.length,
+    sugerido: filtradasPorTipo.filter((m) => m.status === "sugerido").length,
+    em_funcionamento: filtradasPorTipo.filter((m) => m.status === "em_funcionamento").length,
+  };
+
+  const tipoContagem = {
+    todos: filtradasPorStatus.length,
+    sugestao: filtradasPorStatus.filter((m) => m.tipo === "sugestao").length,
+    erro: filtradasPorStatus.filter((m) => m.tipo === "erro").length,
+  };
+
+  const visiveis = filtradasPorBuscaEData.filter(
+    (m) =>
+      (statusFiltro === "todos" || m.status === statusFiltro) &&
+      (tipoFiltro === "todos" || m.tipo === tipoFiltro),
+  );
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
@@ -489,6 +507,30 @@ function Melhorias() {
           <Label className="text-xs text-muted-foreground">Até</Label>
           <Input type="date" value={ate} onChange={(e) => setAte(e.target.value)} />
         </div>
+      </div>
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        {(
+          [
+            ["todos", "Todos", null, tipoContagem.todos],
+            ["sugestao", TIPO_LABEL.sugestao, IconBulb, tipoContagem.sugestao],
+            ["erro", TIPO_LABEL.erro, IconBug, tipoContagem.erro],
+          ] as [typeof tipoFiltro, string, typeof IconBulb | null, number][]
+        ).map(([valor, rotulo, Icon, n]) => (
+          <button
+            key={valor}
+            onClick={() => setTipoFiltro(valor)}
+            className={cn(
+              "flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition",
+              tipoFiltro === valor
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-input bg-transparent text-foreground",
+            )}
+          >
+            {Icon && <Icon className="size-3.5" />}
+            {rotulo} {n}
+          </button>
+        ))}
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
