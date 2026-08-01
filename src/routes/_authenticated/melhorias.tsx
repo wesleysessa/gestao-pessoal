@@ -229,7 +229,7 @@ function Melhorias() {
   useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
 
   const [busca, setBusca] = useState("");
-  const [statusFiltro, setStatusFiltro] = useState<"todos" | StatusMelhoria>("todos");
+  const [statusFiltro, setStatusFiltro] = useState<"todos" | StatusMelhoria>("sugerido");
   const [de, setDe] = useState("");
   const [ate, setAte] = useState("");
 
