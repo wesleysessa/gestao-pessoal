@@ -28,6 +28,7 @@ import { usePwaInstall } from "@/features/pwa/use-pwa-install";
 import { useCurrentProfile } from "@/features/auth/use-current-profile";
 import { useStreakResumo } from "@/features/streak/hooks";
 import { StreakCalendarDialog } from "@/components/streak-calendar";
+import { AppLogo } from "@/components/app-logo";
 import { MENU_MODULOS } from "@/features/menu-modulos";
 
 const drawerSections = [{ label: "Início", to: "/", icon: IconHome }, ...MENU_MODULOS];
@@ -134,7 +135,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <SheetHeader className="shrink-0 border-b border-sidebar-border p-5 text-left">
                 <div className="flex items-center gap-3">
-                  <img src="/app-icon.png" alt="" className="size-9 shrink-0 rounded-chip" />
+                  <AppLogo size={36} editable />
                   <div className="min-w-0">
                     <SheetTitle className="truncate text-base font-medium text-primary">
                       {profile?.name ?? "Gestão Pessoal"}
@@ -256,7 +257,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         {isRoot ? (
           <h1 className="flex flex-1 items-center gap-2 truncate text-[18px] font-medium text-primary">
-            <img src="/app-icon.png" alt="" className="size-6 shrink-0 rounded-md" />
+            <AppLogo size={24} className="rounded-md" />
             Menu
           </h1>
         ) : (

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { IconDownload, IconShare3, IconSquarePlus, IconX } from "@tabler/icons-react";
 import { usePwaInstall } from "@/features/pwa/use-pwa-install";
+import { AppLogo } from "@/components/app-logo";
 
 const DISMISS_KEY = "gp_install_dismissed";
 
@@ -49,7 +50,7 @@ export function InstallPrompt() {
     <div className="fixed inset-x-0 bottom-0 z-[80] flex justify-center p-3">
       <div className="w-full max-w-sm rounded-card border border-border bg-card p-4 shadow-elevated">
         <div className="flex items-start gap-3">
-          <img src="/app-icon.png" alt="" className="size-11 shrink-0 rounded-chip" />
+          <AppLogo size={44} />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-foreground">Instalar o Gestão Pessoal</p>
             {iosHint ? (
