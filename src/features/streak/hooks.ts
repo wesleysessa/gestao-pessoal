@@ -28,7 +28,7 @@ export function useStreakResumo() {
   const tarefas = [
     {
       rotulo: "Vocabulário",
-      feita: vocab.some((v) => v.created_at.slice(0, 10) === hoje()),
+      feita: vocab.some((v) => v.data === hoje()),
       to: "/vocabulario",
       acao: "Adicionar palavra",
     },
@@ -62,7 +62,7 @@ export function useStreakResumo() {
   const diaCumpriuMeta = useMemo(() => {
     return (dataISO: string) => {
       let n = 0;
-      if (vocab.some((v) => v.created_at.slice(0, 10) === dataISO)) n++;
+      if (vocab.some((v) => v.data === dataISO)) n++;
       if (diario.some((e) => e.data === dataISO)) n++;
       if (livros.some((l) => l.data === dataISO)) n++;
       if (checkins.some((c) => c.data === dataISO)) n++;

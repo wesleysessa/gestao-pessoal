@@ -294,6 +294,9 @@ export type Database = {
           idioma: string;
           traducao: string;
           exemplo: string | null;
+          data: string;
+          classe_gramatical: string | null;
+          antonimo: string | null;
           created_at: string;
         };
         Insert: {
@@ -303,6 +306,9 @@ export type Database = {
           idioma?: string;
           traducao: string;
           exemplo?: string | null;
+          data?: string;
+          classe_gramatical?: string | null;
+          antonimo?: string | null;
           created_at?: string;
         };
         Update: {
@@ -312,6 +318,9 @@ export type Database = {
           idioma?: string;
           traducao?: string;
           exemplo?: string | null;
+          data?: string;
+          classe_gramatical?: string | null;
+          antonimo?: string | null;
           created_at?: string;
         };
         Relationships: [];

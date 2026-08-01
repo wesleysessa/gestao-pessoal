@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { hoje } from "@/lib/data";
 import type { NovaEntradaDiario } from "./types";
 
 export const FOTOS_BUCKET = "diario-fotos";
@@ -13,9 +14,17 @@ export async function listDiario() {
   return data;
 }
 
-/** Retorna a linha criada — precisamos do id pra poder anexar fotos em seguida. */
+/**
+ * Retorna a linha criada — precisamos do id pra poder anexar fotos em
+ * seguida. `data` é sempre o dia local de hoje (não deixamos o Postgres
+ * decidir — o `current_date` dele é em UTC).
+ */
 export async function createEntradaDiario(input: NovaEntradaDiario) {
-  const { data, error } = await supabase.from("diario").insert(input).select("*").single();
+  const { data, error } = await supabase
+    .from("diario")
+    .insert({ ...input, data: hoje() })
+    .select("*")
+    .single();
   if (error) throw error;
   return data;
 }

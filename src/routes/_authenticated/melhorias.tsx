@@ -26,7 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { fmtData } from "@/lib/data";
+import { dataLocalDe, fmtData } from "@/lib/data";
 import { useSignedUrl } from "@/lib/use-signed-url";
 import { useCurrentProfile } from "@/features/auth/use-current-profile";
 import {
@@ -316,7 +316,7 @@ function Melhorias() {
         const q = busca.trim().toLowerCase();
         if (!`${m.titulo} ${m.descricao ?? ""}`.toLowerCase().includes(q)) return false;
       }
-      const dia = m.created_at.slice(0, 10);
+      const dia = dataLocalDe(m.created_at);
       if (de && dia < de) return false;
       if (ate && dia > ate) return false;
       return true;
@@ -543,7 +543,7 @@ function Melhorias() {
                       {STATUS_LABEL[m.status as StatusMelhoria]}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
-                      {TIPO_LABEL[m.tipo as TipoMelhoria]} · {fmtData(m.created_at.slice(0, 10))}
+                      {TIPO_LABEL[m.tipo as TipoMelhoria]} · {fmtData(dataLocalDe(m.created_at))}
                     </span>
                   </div>
 

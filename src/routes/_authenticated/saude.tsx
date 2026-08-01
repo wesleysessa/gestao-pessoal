@@ -15,7 +15,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
-import { fmtData, hoje } from "@/lib/data";
+import { dataLocalDe, fmtData, hoje } from "@/lib/data";
 import { useCheckins, useUpsertCheckinHoje } from "@/features/saude/hooks";
 import {
   useAgua,
@@ -68,7 +68,7 @@ function ultimosNDias(n: number): string[] {
   for (let i = n - 1; i >= 0; i--) {
     const dt = new Date(base);
     dt.setDate(base.getDate() - i);
-    dias.push(dt.toISOString().slice(0, 10));
+    dias.push(dataLocalDe(dt));
   }
   return dias;
 }
@@ -93,7 +93,7 @@ function SecaoAgua() {
   const totalPorDia = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of registros) {
-      const dia = r.registrado_em.slice(0, 10);
+      const dia = dataLocalDe(r.registrado_em);
       map.set(dia, (map.get(dia) ?? 0) + r.quantidade_ml);
     }
     return map;
@@ -112,7 +112,7 @@ function SecaoAgua() {
   );
 
   const totalHoje = totalPorDia.get(hoje()) ?? 0;
-  const registrosHoje = registros.filter((r) => r.registrado_em.slice(0, 10) === hoje());
+  const registrosHoje = registros.filter((r) => dataLocalDe(r.registrado_em) === hoje());
   const progresso = metaHoje ? Math.min(100, Math.round((totalHoje / metaHoje) * 100)) : null;
 
   function adicionarQuantidade(ml: number) {

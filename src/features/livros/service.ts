@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { hoje } from "@/lib/data";
 import type { NovoLivro } from "./types";
 
 export async function listLivros() {
@@ -11,8 +12,9 @@ export async function listLivros() {
   return data;
 }
 
+/** `data` é sempre o dia local de hoje — não deixamos o Postgres decidir (fuso UTC). */
 export async function createLivro(input: NovoLivro) {
-  const { error } = await supabase.from("livros").insert(input);
+  const { error } = await supabase.from("livros").insert({ ...input, data: hoje() });
   if (error) throw error;
 }
 

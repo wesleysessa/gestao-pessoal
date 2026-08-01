@@ -17,7 +17,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { fmtData, hoje } from "@/lib/data";
+import { dataLocalDe, fmtData, hoje } from "@/lib/data";
 import { useSignedUrl } from "@/lib/use-signed-url";
 import { useCurrentProfile } from "@/features/auth/use-current-profile";
 import {
@@ -46,7 +46,7 @@ function diasDoMesAteHoje(): string[] {
   const dias: string[] = [];
   for (let d = 1; d <= hojeDate.getDate(); d++) {
     const dt = new Date(hojeDate.getFullYear(), hojeDate.getMonth(), d);
-    dias.push(dt.toISOString().slice(0, 10));
+    dias.push(dataLocalDe(dt));
   }
   return dias;
 }

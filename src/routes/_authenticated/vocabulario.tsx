@@ -15,15 +15,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { fmtData } from "@/lib/data";
 import {
   useCreateVocabulario,
   useDeleteVocabulario,
   useVocabulario,
 } from "@/features/vocabulario/hooks";
+import { CLASSE_GRAMATICAL_LABEL, type ClasseGramatical } from "@/features/vocabulario/types";
 
 export const Route = createFileRoute("/_authenticated/vocabulario")({
   component: Vocabulario,
 });
+
+const CLASSES_GRAMATICAIS: ClasseGramatical[] = ["substantivo", "verbo", "adjetivo"];
 
 function Vocabulario() {
   const { data: itens = [], isLoading } = useVocabulario();
@@ -34,6 +38,8 @@ function Vocabulario() {
   const [idioma, setIdioma] = useState("");
   const [traducao, setTraducao] = useState("");
   const [exemplo, setExemplo] = useState("");
+  const [classeGramatical, setClasseGramatical] = useState<ClasseGramatical | "">("");
+  const [antonimo, setAntonimo] = useState("");
   const [filtro, setFiltro] = useState("todos");
   const [revisao, setRevisao] = useState(false);
   const [revelados, setRevelados] = useState<Record<string, boolean>>({});
@@ -42,19 +48,26 @@ function Vocabulario() {
   const visiveis = filtro === "todos" ? itens : itens.filter((i) => i.idioma === filtro);
 
   function adicionar() {
-    if (!termo.trim() || !traducao.trim()) return;
+    if (!termo.trim() || !traducao.trim() || !classeGramatical) {
+      if (!classeGramatical) toast.error("Escolha a classe gramatical");
+      return;
+    }
     criar.mutate(
       {
         termo: termo.trim(),
         idioma: idioma.trim() || "Geral",
         traducao: traducao.trim(),
         exemplo: exemplo.trim() || null,
+        classe_gramatical: classeGramatical,
+        antonimo: antonimo.trim() || null,
       },
       {
         onSuccess: () => {
           setTermo("");
           setTraducao("");
           setExemplo("");
+          setClasseGramatical("");
+          setAntonimo("");
         },
         onError: (e: Error) => toast.error(e.message),
       },
@@ -102,6 +115,34 @@ function Vocabulario() {
               onChange={(e) => setTraducao(e.target.value)}
               placeholder="ex.: descoberta feliz por acaso"
             />
+          </div>
+          <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+            <div className="mb-3 space-y-1.5">
+              <Label>Classe gramatical</Label>
+              <Select
+                value={classeGramatical}
+                onValueChange={(v) => setClasseGramatical(v as ClasseGramatical)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha uma opção" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CLASSES_GRAMATICAIS.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {CLASSE_GRAMATICAL_LABEL[c]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="mb-3 space-y-1.5">
+              <Label>Antônimo (opcional)</Label>
+              <Input
+                value={antonimo}
+                onChange={(e) => setAntonimo(e.target.value)}
+                placeholder="ex.: feiúra"
+              />
+            </div>
           </div>
           <div className="mb-3 space-y-1.5">
             <Label>Frase de exemplo (opcional)</Label>
@@ -164,10 +205,16 @@ function Vocabulario() {
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <Badge variant="secondary" className="mb-1">
-                      {i.idioma}
-                    </Badge>
+                    <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                      <Badge variant="secondary">{i.idioma}</Badge>
+                      {i.classe_gramatical && (
+                        <Badge variant="outline">
+                          {CLASSE_GRAMATICAL_LABEL[i.classe_gramatical as ClasseGramatical]}
+                        </Badge>
+                      )}
+                    </div>
                     <div className="truncate text-lg font-semibold text-foreground">{i.termo}</div>
+                    <span className="text-[11px] text-muted-foreground">{fmtData(i.data)}</span>
                   </div>
                   <button
                     onClick={() => excluir(i.id)}
@@ -185,7 +232,14 @@ function Vocabulario() {
                     Revelar tradução
                   </button>
                 ) : (
-                  <div className="mt-1.5 text-sm text-foreground">{i.traducao}</div>
+                  <>
+                    <div className="mt-1.5 text-sm text-foreground">{i.traducao}</div>
+                    {i.antonimo && (
+                      <div className="mt-0.5 text-xs text-muted-foreground">
+                        Antônimo: {i.antonimo}
+                      </div>
+                    )}
+                  </>
                 )}
                 {i.exemplo && (!revisao || revelados[i.id]) && (
                   <div className="mt-1.5 text-xs italic text-muted-foreground">“{i.exemplo}”</div>
