@@ -87,7 +87,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className={cn("flex min-h-svh flex-col", isRoot ? "bg-secondary" : "bg-background")}>
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-1 border-b border-divider dark:border-border bg-card px-2 text-foreground shadow-sm">
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-1 border-b border-divider dark:border-border bg-card px-2 pr-3 text-foreground shadow-sm">
         {isRoot ? (
           <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
             <SheetTrigger asChild>
@@ -213,11 +213,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           type="button"
           onClick={() => setCalendarioAberto(true)}
           aria-label="Chama e calendário de ofensiva"
-          className="flex shrink-0 items-center gap-1 rounded-full px-2 py-1 transition hover:bg-muted"
+          className="flex shrink-0 items-center gap-1 rounded-full bg-secondary px-2.5 py-1 transition hover:bg-muted"
         >
           <IconFlame
             className={cn(
-              "size-5",
+              "size-4",
               streakExibido > 0 ? "fill-orange-500 text-orange-500" : "text-muted-foreground/40",
             )}
           />
