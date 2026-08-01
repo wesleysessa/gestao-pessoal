@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFrase, deleteFrase, fraseDoDia, listFrases, updateFrase } from "./service";
 import type { NovaFrase } from "./types";
@@ -10,10 +10,39 @@ export function useFrases() {
   return useQuery({ queryKey: KEY, queryFn: listFrases });
 }
 
+/**
+ * A frase do dia é sempre a mesma (sorteio estável pela data) até o usuário
+ * pedir "próxima" — aí navega manualmente pelo banco; recarregar a página
+ * volta pro sorteio oficial do dia.
+ */
 export function useFraseDoDia() {
   const { data: frases = [], isLoading } = useFrases();
-  const frase = useMemo(() => fraseDoDia(frases, hoje()), [frases]);
-  return { frase, temFrases: frases.length > 0, isLoading };
+  const fraseDia = useMemo(() => fraseDoDia(frases, hoje()), [frases]);
+  const [idManual, setIdManual] = useState<string | null>(null);
+
+  const frase = idManual ? (frases.find((f) => f.id === idManual) ?? fraseDia) : fraseDia;
+  const navegandoManualmente = idManual != null && frase?.id !== fraseDia?.id;
+
+  function proxima() {
+    if (frases.length <= 1) return;
+    const opcoes = frases.filter((f) => f.id !== frase?.id);
+    const escolhida = opcoes[Math.floor(Math.random() * opcoes.length)];
+    setIdManual(escolhida.id);
+  }
+
+  function voltarADoDia() {
+    setIdManual(null);
+  }
+
+  return {
+    frase,
+    temFrases: frases.length > 0,
+    temMaisDeUma: frases.length > 1,
+    isLoading,
+    proxima,
+    navegandoManualmente,
+    voltarADoDia,
+  };
 }
 
 export function useCreateFrase() {
