@@ -7,6 +7,30 @@ export type Database = {
   };
   public: {
     Tables: {
+      frases: {
+        Row: {
+          id: string;
+          user_id: string;
+          texto: string;
+          autor: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          texto: string;
+          autor?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          texto?: string;
+          autor?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       melhorias: {
         Row: {
           id: string;

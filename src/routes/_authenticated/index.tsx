@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { IconChevronRight } from "@tabler/icons-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { FraseDoDia } from "@/components/frase-do-dia";
 import { useVocabulario } from "@/features/vocabulario/hooks";
 import { useDiario } from "@/features/diario/hooks";
 import { useLivros } from "@/features/livros/hooks";
@@ -27,6 +28,8 @@ function Home() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
+      <FraseDoDia />
+
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map((s) => (
           <Link key={s.to} to={s.to}>
