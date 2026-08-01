@@ -29,6 +29,8 @@ import { useCurrentProfile } from "@/features/auth/use-current-profile";
 import { useStreakResumo } from "@/features/streak/hooks";
 import { StreakCalendarDialog } from "@/components/streak-calendar";
 import { AppLogo } from "@/components/app-logo";
+import { WaterCupIcon } from "@/components/water-cup-icon";
+import { useHidratacaoHoje } from "@/features/agua/hooks";
 import { MENU_MODULOS } from "@/features/menu-modulos";
 
 const drawerSections = [{ label: "Início", to: "/", icon: IconHome }, ...MENU_MODULOS];
@@ -76,6 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [fixados, setFixados] = useState<string[]>(carregarFixados);
   const { isStandalone } = usePwaInstall();
   const { streakExibido } = useStreakResumo();
+  const { progresso: hidratacaoProgresso } = useHidratacaoHoje();
 
   const isRoot = pathname === "/";
   const tituloSecao = sectionTitle(pathname);
@@ -271,20 +274,35 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         )}
 
-        <button
-          type="button"
-          onClick={() => setCalendarioAberto(true)}
-          aria-label="Chama e calendário de ofensiva"
-          className="flex shrink-0 items-center gap-1 rounded-full bg-secondary px-2.5 py-1 transition hover:bg-muted"
-        >
-          <IconFlame
-            className={cn(
-              "size-4",
-              streakExibido > 0 ? "fill-orange-500 text-orange-500" : "text-muted-foreground/40",
-            )}
-          />
-          <span className="text-sm font-semibold text-foreground">{streakExibido}</span>
-        </button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {hidratacaoProgresso != null && (
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/saude" })}
+              aria-label="Hidratação do dia"
+              title="Hidratação do dia"
+              className="flex shrink-0 items-center gap-1 rounded-full bg-secondary px-2.5 py-1 transition hover:bg-muted"
+            >
+              <WaterCupIcon percent={hidratacaoProgresso} size={16} />
+              <span className="text-sm font-semibold text-foreground">{hidratacaoProgresso}%</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setCalendarioAberto(true)}
+            aria-label="Chama e calendário de ofensiva"
+            className="flex shrink-0 items-center gap-1 rounded-full bg-secondary px-2.5 py-1 transition hover:bg-muted"
+          >
+            <IconFlame
+              className={cn(
+                "size-4",
+                streakExibido > 0 ? "fill-orange-500 text-orange-500" : "text-muted-foreground/40",
+              )}
+            />
+            <span className="text-sm font-semibold text-foreground">{streakExibido}</span>
+          </button>
+        </div>
       </header>
 
       <ChangePasswordDialog open={pwdOpen} onOpenChange={setPwdOpen} />
