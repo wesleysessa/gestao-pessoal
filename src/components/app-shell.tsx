@@ -258,7 +258,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {isRoot ? (
           <h1 className="flex flex-1 items-center gap-2 truncate text-[18px] font-medium text-primary">
             <AppLogo size={24} className="rounded-md" />
-            Menu
+            Gestão Pessoal
           </h1>
         ) : (
           <button
