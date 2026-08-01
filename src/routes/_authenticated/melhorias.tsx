@@ -65,6 +65,24 @@ function FotoThumbInner({ path }: { path: string }) {
   );
 }
 
+/** Miniatura que abre o arquivo original (sem corte) numa nova aba. */
+function FotoOriginalLink({ path, className }: { path: string; className?: string }) {
+  const { data: url } = useSignedUrl(FOTOS_BUCKET, path);
+  if (!url) return <div className={cn("animate-pulse bg-muted", className)} />;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      title="Abrir foto original"
+      className={className}
+    >
+      <img src={url} alt="" className="size-full object-cover" />
+    </a>
+  );
+}
+
 /** Faixa de miniaturas do card — clique abre a galeria completa em dialog. */
 function FotosDoCard({ melhoriaId }: { melhoriaId: string }) {
   const { data: fotos = [] } = useFotosMelhoria(melhoriaId);
@@ -103,13 +121,16 @@ function FotosDoCard({ melhoriaId }: { melhoriaId: string }) {
           <DialogHeader>
             <DialogTitle>Fotos / prints</DialogTitle>
           </DialogHeader>
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Toque numa foto para abrir o original
+          </p>
           <div className="grid grid-cols-3 gap-2">
             {fotos.map((f) => (
               <div
                 key={f.id}
                 className="group relative aspect-square overflow-hidden rounded-md bg-muted"
               >
-                <FotoThumbInner path={f.storage_path} />
+                <FotoOriginalLink path={f.storage_path} className="block size-full" />
                 <button
                   onClick={() =>
                     remover.mutate(
@@ -142,14 +163,15 @@ function FotosExistentes({ melhoriaId }: { melhoriaId: string }) {
     <div className="mb-3 flex flex-wrap gap-2">
       {fotos.map((f: FotoMelhoria) => (
         <div key={f.id} className="group relative size-16 overflow-hidden rounded-md bg-muted">
-          <FotoThumbInner path={f.storage_path} />
+          <FotoOriginalLink path={f.storage_path} className="block size-full" />
           <button
-            onClick={() =>
+            onClick={(e) => {
+              e.stopPropagation();
               remover.mutate(
                 { id: f.id, storagePath: f.storage_path, melhoriaId },
-                { onError: (e: Error) => toast.error(e.message) },
-              )
-            }
+                { onError: (err: Error) => toast.error(err.message) },
+              );
+            }}
             aria-label="Excluir foto"
             className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
           >

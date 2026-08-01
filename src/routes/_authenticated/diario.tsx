@@ -89,13 +89,16 @@ function FotosDoDia({ entradaId }: { entradaId: string }) {
           <DialogHeader>
             <DialogTitle>Fotos — {fmtData(hoje())}</DialogTitle>
           </DialogHeader>
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Toque numa foto para abrir o original
+          </p>
           <div className="grid grid-cols-3 gap-2">
             {fotos.map((f) => (
               <div
                 key={f.id}
                 className="group relative aspect-square overflow-hidden rounded-md bg-muted"
               >
-                <FotoThumbInner path={f.storage_path} />
+                <FotoOriginalLink path={f.storage_path} className="block size-full" />
                 <button
                   onClick={() =>
                     remover.mutate(
@@ -126,6 +129,24 @@ function FotoThumbInner({ path }: { path: string }) {
   );
 }
 
+/** Miniatura que abre o arquivo original (sem corte) numa nova aba. */
+function FotoOriginalLink({ path, className }: { path: string; className?: string }) {
+  const { data: url } = useSignedUrl(FOTOS_BUCKET, path);
+  if (!url) return <div className={`animate-pulse bg-muted ${className ?? ""}`} />;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      title="Abrir foto original"
+      className={className}
+    >
+      <img src={url} alt="" className="size-full object-cover" />
+    </a>
+  );
+}
+
 /** Fotos já salvas de uma entrada em edição — removíveis direto. */
 function FotosExistentes({ entradaId }: { entradaId: string }) {
   const { data: fotos = [] } = useFotosEntrada(entradaId);
@@ -137,7 +158,7 @@ function FotosExistentes({ entradaId }: { entradaId: string }) {
     <div className="mb-3 flex flex-wrap gap-2">
       {fotos.map((f: FotoDiario) => (
         <div key={f.id} className="group relative size-16 overflow-hidden rounded-md bg-muted">
-          <FotoThumbInner path={f.storage_path} />
+          <FotoOriginalLink path={f.storage_path} className="block size-full" />
           <button
             onClick={() =>
               remover.mutate(
