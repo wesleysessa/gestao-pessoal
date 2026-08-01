@@ -12,7 +12,10 @@ import {
   IconDeviceDesktop,
   IconDeviceMobilePlus,
   IconFlame,
+  IconPin,
+  IconPinFilled,
 } from "@tabler/icons-react";
+import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,13 +32,25 @@ import { MENU_MODULOS } from "@/features/menu-modulos";
 
 const drawerSections = [{ label: "Início", to: "/", icon: IconHome }, ...MENU_MODULOS];
 
-/** Abas fixas do rodapé — os demais módulos continuam acessíveis pelo menu. */
-const BOTTOM_NAV_PATHS = ["/", "/diario", "/saude", "/melhorias"];
-const bottomItems = BOTTOM_NAV_PATHS.map((path) =>
-  path === "/"
-    ? { label: "Início", to: "/", icon: IconHome }
-    : MENU_MODULOS.find((m) => m.to === path)!,
-);
+/** Quais itens do menu ficam fixados no rodapé — escolha do usuário (📌 no menu). */
+const PINNED_KEY = "gp_bottom_nav";
+const PINNED_PADRAO = ["/", "/diario", "/saude", "/melhorias"];
+const MAX_PINNED = 5;
+
+function carregarFixados(): string[] {
+  try {
+    const salvo = localStorage.getItem(PINNED_KEY);
+    if (!salvo) return PINNED_PADRAO;
+    const lista = JSON.parse(salvo);
+    if (!Array.isArray(lista)) return PINNED_PADRAO;
+    const validos = lista.filter(
+      (to): to is string => typeof to === "string" && drawerSections.some((s) => s.to === to),
+    );
+    return validos.length > 0 ? validos : PINNED_PADRAO;
+  } catch {
+    return PINNED_PADRAO;
+  }
+}
 
 const barIcon = "text-[#44515E] dark:text-muted-foreground hover:bg-muted";
 
@@ -57,6 +72,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [pwdOpen, setPwdOpen] = useState(false);
   const [installOpen, setInstallOpen] = useState(false);
   const [calendarioAberto, setCalendarioAberto] = useState(false);
+  const [fixados, setFixados] = useState<string[]>(carregarFixados);
   const { isStandalone } = usePwaInstall();
   const { streakExibido } = useStreakResumo();
 
@@ -68,6 +84,23 @@ export function AppShell({ children }: { children: ReactNode }) {
     html.classList.toggle("home-no-scrollbar", isRoot);
     return () => html.classList.remove("home-no-scrollbar");
   }, [isRoot]);
+
+  useEffect(() => {
+    localStorage.setItem(PINNED_KEY, JSON.stringify(fixados));
+  }, [fixados]);
+
+  function alternarFixado(to: string) {
+    setFixados((atual) => {
+      if (atual.includes(to)) return atual.filter((t) => t !== to);
+      if (atual.length >= MAX_PINNED) {
+        toast.error(`Máximo de ${MAX_PINNED} itens no rodapé`);
+        return atual;
+      }
+      return [...atual, to];
+    });
+  }
+
+  const bottomItems = drawerSections.filter((s) => fixados.includes(s.to));
 
   const isActive = (to: string) =>
     to === "/" ? pathname === "/" : pathname === to || pathname.startsWith(to + "/");
@@ -111,25 +144,53 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </div>
               </SheetHeader>
               <nav className="scrollbar-clean flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
-                {drawerSections.map((s) => (
-                  <Link
-                    key={s.to}
-                    to={s.to}
-                    onClick={() => setDrawerOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                      isActive(s.to)
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent/60",
-                    )}
-                  >
-                    <span className="flex size-7 shrink-0 items-center justify-center rounded-chip bg-secondary">
-                      <s.icon className="size-4 text-primary" stroke={1.75} />
-                    </span>
-                    <span className="flex-1">{s.label}</span>
-                    <IconChevronRight className="size-4 text-muted-foreground/60" stroke={1.75} />
-                  </Link>
-                ))}
+                {drawerSections.map((s) => {
+                  const fixado = fixados.includes(s.to);
+                  return (
+                    <div
+                      key={s.to}
+                      className={cn(
+                        "flex items-center gap-1 rounded-md pl-3 pr-1 text-sm font-medium transition-colors",
+                        isActive(s.to)
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/60",
+                      )}
+                    >
+                      <Link
+                        to={s.to}
+                        onClick={() => setDrawerOpen(false)}
+                        className="flex flex-1 items-center gap-3 py-2.5"
+                      >
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-chip bg-secondary">
+                          <s.icon className="size-4 text-primary" stroke={1.75} />
+                        </span>
+                        <span className="flex-1">{s.label}</span>
+                        <IconChevronRight
+                          className="size-4 text-muted-foreground/60"
+                          stroke={1.75}
+                        />
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => alternarFixado(s.to)}
+                        aria-label={fixado ? "Remover do rodapé" : "Fixar no rodapé"}
+                        title={fixado ? "Remover do rodapé" : "Fixar no rodapé"}
+                        className={cn(
+                          "flex size-8 shrink-0 items-center justify-center rounded-md",
+                          fixado
+                            ? "text-primary"
+                            : "text-muted-foreground/50 hover:text-muted-foreground",
+                        )}
+                      >
+                        {fixado ? (
+                          <IconPinFilled className="size-4" />
+                        ) : (
+                          <IconPin className="size-4" />
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
               </nav>
               <div className="shrink-0 border-t border-sidebar-border p-2">
                 <div className="mb-1 flex items-center gap-1 rounded-md bg-muted p-1">
@@ -229,33 +290,37 @@ export function AppShell({ children }: { children: ReactNode }) {
       <InstallDialog open={installOpen} onOpenChange={setInstallOpen} />
       <StreakCalendarDialog open={calendarioAberto} onOpenChange={setCalendarioAberto} />
 
-      <main className="flex-1 overflow-x-hidden pb-24">{children}</main>
+      <main className={cn("flex-1 overflow-x-hidden", bottomItems.length > 0 ? "pb-24" : "pb-6")}>
+        {children}
+      </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-divider bg-card shadow-elevated dark:border-border">
-        <ul
-          className="mx-auto grid max-w-2xl"
-          style={{ gridTemplateColumns: `repeat(${bottomItems.length}, minmax(0, 1fr))` }}
-        >
-          {bottomItems.map((item) => {
-            const active = isActive(item.to);
-            return (
-              <li key={item.to}>
-                <Link
-                  to={item.to}
-                  replace={emAlgumaAba}
-                  className={cn(
-                    "flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors",
-                    active ? "text-primary" : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <item.icon className="size-5" stroke={active ? 2 : 1.75} />
-                  {item.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      {bottomItems.length > 0 && (
+        <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-divider bg-card shadow-elevated dark:border-border">
+          <ul
+            className="mx-auto grid max-w-2xl"
+            style={{ gridTemplateColumns: `repeat(${bottomItems.length}, minmax(0, 1fr))` }}
+          >
+            {bottomItems.map((item) => {
+              const active = isActive(item.to);
+              return (
+                <li key={item.to}>
+                  <Link
+                    to={item.to}
+                    replace={emAlgumaAba}
+                    className={cn(
+                      "flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors",
+                      active ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <item.icon className="size-5" stroke={active ? 2 : 1.75} />
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      )}
     </div>
   );
 }
