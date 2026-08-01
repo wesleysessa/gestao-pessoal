@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { dataLocalDe, fmtData } from "@/lib/data";
 import {
   useCreateFrase,
   useDeleteFrase,
@@ -117,7 +118,11 @@ function GestaoFrases() {
                   <IconTrash className="size-3.5" />
                 </button>
               </div>
-              {f.autor && <p className="mt-1 text-xs text-muted-foreground">— {f.autor}</p>}
+              <p className="mt-1 text-xs text-muted-foreground">
+                {[f.autor ? `— ${f.autor}` : null, fmtData(dataLocalDe(f.created_at))]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
             </div>
           ))}
         </div>
