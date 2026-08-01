@@ -1,14 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createMelhoria,
+  deleteFotoMelhoria,
   deleteMelhoria,
+  listFotosMelhoria,
   listMelhorias,
+  marcarEmFuncionamento,
   updateMelhoria,
-  updateStatusMelhoria,
+  uploadFotoMelhoria,
+  voltarParaSugerido,
 } from "./service";
-import type { NovaMelhoria, StatusMelhoria } from "./types";
+import type { NovaMelhoria } from "./types";
 
 const KEY = ["melhorias"];
+const fotosKey = (melhoriaId: string) => ["melhorias-fotos", melhoriaId];
 
 export function useMelhorias() {
   return useQuery({ queryKey: KEY, queryFn: listMelhorias });
@@ -30,11 +35,19 @@ export function useUpdateMelhoria() {
   });
 }
 
-export function useUpdateStatusMelhoria() {
+export function useVoltarParaSugerido() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: StatusMelhoria }) =>
-      updateStatusMelhoria(id, status),
+    mutationFn: (id: string) => voltarParaSugerido(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+export function useMarcarEmFuncionamento() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, retorno }: { id: string; retorno: string | null }) =>
+      marcarEmFuncionamento(id, retorno),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });
 }
@@ -44,5 +57,38 @@ export function useDeleteMelhoria() {
   return useMutation({
     mutationFn: (id: string) => deleteMelhoria(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+export function useFotosMelhoria(melhoriaId: string | undefined) {
+  return useQuery({
+    queryKey: fotosKey(melhoriaId ?? ""),
+    queryFn: () => listFotosMelhoria(melhoriaId as string),
+    enabled: !!melhoriaId,
+  });
+}
+
+export function useUploadFotoMelhoria() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      melhoriaId,
+      userId,
+      file,
+    }: {
+      melhoriaId: string;
+      userId: string;
+      file: File;
+    }) => uploadFotoMelhoria(melhoriaId, userId, file),
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: fotosKey(vars.melhoriaId) }),
+  });
+}
+
+export function useDeleteFotoMelhoria() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, storagePath }: { id: string; storagePath: string; melhoriaId: string }) =>
+      deleteFotoMelhoria(id, storagePath),
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: fotosKey(vars.melhoriaId) }),
   });
 }
