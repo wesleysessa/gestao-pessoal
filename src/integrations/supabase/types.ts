@@ -7,6 +7,63 @@ export type Database = {
   };
   public: {
     Tables: {
+      agenda_eventos: {
+        Row: {
+          id: string;
+          user_id: string;
+          titulo: string;
+          descricao: string | null;
+          local: string | null;
+          dia_inteiro: boolean;
+          data: string;
+          data_fim: string | null;
+          hora_inicio: string | null;
+          hora_fim: string | null;
+          cor: string;
+          recorrencia: string;
+          recorrencia_fim: string | null;
+          lembrete_minutos: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          titulo: string;
+          descricao?: string | null;
+          local?: string | null;
+          dia_inteiro?: boolean;
+          data: string;
+          data_fim?: string | null;
+          hora_inicio?: string | null;
+          hora_fim?: string | null;
+          cor?: string;
+          recorrencia?: string;
+          recorrencia_fim?: string | null;
+          lembrete_minutos?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          titulo?: string;
+          descricao?: string | null;
+          local?: string | null;
+          dia_inteiro?: boolean;
+          data?: string;
+          data_fim?: string | null;
+          hora_inicio?: string | null;
+          hora_fim?: string | null;
+          cor?: string;
+          recorrencia?: string;
+          recorrencia_fim?: string | null;
+          lembrete_minutos?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       frases: {
         Row: {
           id: string;
