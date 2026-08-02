@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { IconCamera, IconNotebook, IconPhoto, IconTrash, IconX } from "@tabler/icons-react";
+import {
+  IconCamera,
+  IconNotebook,
+  IconPhoto,
+  IconStar,
+  IconTrash,
+  IconX,
+} from "@tabler/icons-react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { SectionHeader } from "@/components/ds";
@@ -187,6 +194,7 @@ function Diario() {
 
   const [editando, setEditando] = useState<EntradaDiario | null>(null);
   const [titulo, setTitulo] = useState("");
+  const [aprendizado, setAprendizado] = useState("");
   const [texto, setTexto] = useState("");
   const [nota, setNota] = useState(0);
   const [novasFotos, setNovasFotos] = useState<File[]>([]);
@@ -198,6 +206,7 @@ function Diario() {
   function iniciarEdicao(e: EntradaDiario) {
     setEditando(e);
     setTitulo(e.titulo ?? "");
+    setAprendizado(e.aprendizado ?? "");
     setTexto(e.texto);
     setNota(e.nota ?? 0);
     setNovasFotos([]);
@@ -207,6 +216,7 @@ function Diario() {
   function cancelarEdicao() {
     setEditando(null);
     setTitulo("");
+    setAprendizado("");
     setTexto("");
     setNota(0);
     setNovasFotos([]);
@@ -227,6 +237,7 @@ function Diario() {
     if (!texto.trim()) return;
     const input = {
       titulo: titulo.trim() || null,
+      aprendizado: aprendizado.trim() || null,
       texto: texto.trim(),
       nota: nota > 0 ? nota : null,
     };
@@ -301,6 +312,13 @@ function Diario() {
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               placeholder="Título (opcional)"
+            />
+          </div>
+          <div className="mb-3 space-y-1.5">
+            <Input
+              value={aprendizado}
+              onChange={(e) => setAprendizado(e.target.value)}
+              placeholder="O que aprendeu de novo hoje? (opcional — ganha uma estrela)"
             />
           </div>
           <div className="mb-3 space-y-1.5">
@@ -457,17 +475,31 @@ function Diario() {
                       <div className="text-base font-semibold text-foreground">{e.titulo}</div>
                     )}
                   </div>
-                  <button
-                    onClick={(ev) => excluir(e.id, ev)}
-                    aria-label="Excluir"
-                    className="shrink-0 text-muted-foreground transition hover:text-destructive"
-                  >
-                    <IconTrash className="size-4" />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {e.aprendizado && (
+                      <IconStar
+                        className="size-4 fill-amber-400 text-amber-400"
+                        aria-label="Aprendizado registrado hoje"
+                      />
+                    )}
+                    <button
+                      onClick={(ev) => excluir(e.id, ev)}
+                      aria-label="Excluir"
+                      className="text-muted-foreground transition hover:text-destructive"
+                    >
+                      <IconTrash className="size-4" />
+                    </button>
+                  </div>
                 </div>
                 {e.nota != null && (
                   <div className="mt-1.5">
                     <StarRating value={e.nota} size={14} />
+                  </div>
+                )}
+                {e.aprendizado && (
+                  <div className="mt-1.5 flex items-start gap-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+                    <IconStar className="mt-0.5 size-3 shrink-0 fill-amber-400 text-amber-400" />
+                    {e.aprendizado}
                   </div>
                 )}
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground">

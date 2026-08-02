@@ -225,6 +225,7 @@ export type Database = {
           titulo: string | null;
           texto: string;
           nota: number | null;
+          aprendizado: string | null;
           created_at: string;
         };
         Insert: {
@@ -234,6 +235,7 @@ export type Database = {
           titulo?: string | null;
           texto: string;
           nota?: number | null;
+          aprendizado?: string | null;
           created_at?: string;
         };
         Update: {
@@ -243,6 +245,7 @@ export type Database = {
           titulo?: string | null;
           texto?: string;
           nota?: number | null;
+          aprendizado?: string | null;
           created_at?: string;
         };
         Relationships: [];
