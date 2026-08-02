@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
+import { Route as AuthenticatedAguaRouteImport } from './routes/_authenticated/agua'
 import { Route as AuthenticatedCadastrosRouteImport } from './routes/_authenticated/cadastros'
 import { Route as AuthenticatedDiarioRouteImport } from './routes/_authenticated/diario'
 import { Route as AuthenticatedLivrosRouteImport } from './routes/_authenticated/livros'
@@ -38,6 +39,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
   id: '/agenda',
   path: '/agenda',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAguaRoute = AuthenticatedAguaRouteImport.update({
+  id: '/agua',
+  path: '/agua',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCadastrosRoute = AuthenticatedCadastrosRouteImport.update({
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/agenda': typeof AuthenticatedAgendaRoute
+  '/agua': typeof AuthenticatedAguaRoute
   '/cadastros': typeof AuthenticatedCadastrosRoute
   '/diario': typeof AuthenticatedDiarioRoute
   '/livros': typeof AuthenticatedLivrosRoute
@@ -92,6 +99,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/agenda': typeof AuthenticatedAgendaRoute
+  '/agua': typeof AuthenticatedAguaRoute
   '/cadastros': typeof AuthenticatedCadastrosRoute
   '/diario': typeof AuthenticatedDiarioRoute
   '/livros': typeof AuthenticatedLivrosRoute
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
+  '/_authenticated/agua': typeof AuthenticatedAguaRoute
   '/_authenticated/cadastros': typeof AuthenticatedCadastrosRoute
   '/_authenticated/diario': typeof AuthenticatedDiarioRoute
   '/_authenticated/livros': typeof AuthenticatedLivrosRoute
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/agenda'
+    | '/agua'
     | '/cadastros'
     | '/diario'
     | '/livros'
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/agenda'
+    | '/agua'
     | '/cadastros'
     | '/diario'
     | '/livros'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/agenda'
+    | '/_authenticated/agua'
     | '/_authenticated/cadastros'
     | '/_authenticated/diario'
     | '/_authenticated/livros'
@@ -188,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/agenda'
       fullPath: '/agenda'
       preLoaderRoute: typeof AuthenticatedAgendaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/agua': {
+      id: '/_authenticated/agua'
+      path: '/agua'
+      fullPath: '/agua'
+      preLoaderRoute: typeof AuthenticatedAguaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/cadastros': {
@@ -244,6 +263,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
+  AuthenticatedAguaRoute: typeof AuthenticatedAguaRoute
   AuthenticatedCadastrosRoute: typeof AuthenticatedCadastrosRoute
   AuthenticatedDiarioRoute: typeof AuthenticatedDiarioRoute
   AuthenticatedLivrosRoute: typeof AuthenticatedLivrosRoute
@@ -256,6 +276,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
+  AuthenticatedAguaRoute: AuthenticatedAguaRoute,
   AuthenticatedCadastrosRoute: AuthenticatedCadastrosRoute,
   AuthenticatedDiarioRoute: AuthenticatedDiarioRoute,
   AuthenticatedLivrosRoute: AuthenticatedLivrosRoute,

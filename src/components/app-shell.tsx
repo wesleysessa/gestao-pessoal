@@ -37,7 +37,7 @@ const drawerSections = [{ label: "Início", to: "/", icon: IconHome }, ...MENU_M
 
 /** Quais itens do menu ficam fixados no rodapé — escolha do usuário (📌 no menu). */
 const PINNED_KEY = "gp_bottom_nav";
-const PINNED_PADRAO = ["/", "/diario", "/saude", "/melhorias"];
+const PINNED_PADRAO = ["/", "/diario", "/agua", "/saude", "/melhorias"];
 const MAX_PINNED = 5;
 
 function carregarFixados(): string[] {

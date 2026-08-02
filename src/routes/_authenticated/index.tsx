@@ -6,6 +6,7 @@ import { useVocabulario } from "@/features/vocabulario/hooks";
 import { useDiario } from "@/features/diario/hooks";
 import { useLivros } from "@/features/livros/hooks";
 import { useCheckins } from "@/features/saude/hooks";
+import { useHidratacaoHoje } from "@/features/agua/hooks";
 import { useStreakResumo } from "@/features/streak/hooks";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -17,6 +18,7 @@ function Home() {
   const { data: diario = [] } = useDiario();
   const { data: livros = [] } = useLivros();
   const { data: checkins = [] } = useCheckins();
+  const { progresso: hidratacaoProgresso } = useHidratacaoHoje();
   const { tarefas } = useStreakResumo();
 
   const stats = [
@@ -24,9 +26,9 @@ function Home() {
       rotulo: "Vocabulário",
       valor: vocab.length,
       to: "/vocabulario",
-      bg: "bg-violet-50 dark:bg-violet-950/40",
-      border: "border-violet-200 dark:border-violet-900",
-      numero: "text-violet-600 dark:text-violet-400",
+      bg: "bg-fuchsia-50 dark:bg-fuchsia-950/40",
+      border: "border-fuchsia-200 dark:border-fuchsia-900",
+      numero: "text-fuchsia-600 dark:text-fuchsia-400",
     },
     {
       rotulo: "Diário",
@@ -40,6 +42,14 @@ function Home() {
       rotulo: "Livros",
       valor: livros.length,
       to: "/livros",
+      bg: "bg-rose-50 dark:bg-rose-950/40",
+      border: "border-rose-200 dark:border-rose-900",
+      numero: "text-rose-600 dark:text-rose-400",
+    },
+    {
+      rotulo: "Hidratação",
+      valor: hidratacaoProgresso != null ? `${hidratacaoProgresso}%` : "—",
+      to: "/agua",
       bg: "bg-blue-50 dark:bg-blue-950/40",
       border: "border-blue-200 dark:border-blue-900",
       numero: "text-blue-600 dark:text-blue-400",
@@ -58,7 +68,7 @@ function Home() {
     <div className="mx-auto max-w-2xl px-4 py-4">
       <FraseDoDia />
 
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
         {stats.map((s) => (
           <Link key={s.to} to={s.to}>
             <Card className={`p-4 ${s.bg} ${s.border}`}>
