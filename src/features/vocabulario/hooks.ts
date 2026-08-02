@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createVocabulario, deleteVocabulario, listVocabulario } from "./service";
+import {
+  createVocabulario,
+  deleteVocabulario,
+  listVocabulario,
+  updateVocabulario,
+} from "./service";
 import type { NovoVocabulario } from "./types";
 
 const KEY = ["vocabulario"];
@@ -12,6 +17,15 @@ export function useCreateVocabulario() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: NovoVocabulario) => createVocabulario(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+export function useUpdateVocabulario() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: NovoVocabulario }) =>
+      updateVocabulario(id, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });
 }

@@ -18,6 +18,11 @@ export async function createVocabulario(input: NovoVocabulario) {
   if (error) throw error;
 }
 
+export async function updateVocabulario(id: string, input: NovoVocabulario) {
+  const { error } = await supabase.from("vocabulario").update(input).eq("id", id);
+  if (error) throw error;
+}
+
 export async function deleteVocabulario(id: string) {
   const { error } = await supabase.from("vocabulario").delete().eq("id", id);
   if (error) throw error;
