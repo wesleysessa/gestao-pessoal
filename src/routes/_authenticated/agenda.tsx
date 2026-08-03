@@ -756,9 +756,11 @@ function Agenda() {
     return (a.evento.hora_inicio ?? "").localeCompare(b.evento.hora_inicio ?? "");
   };
 
+  // Radar já aparece no grupo fixo — não duplica nas colunas do dia.
   const ocorrenciasPorDiaQuadro = useMemo(() => {
     const map = new Map<string, Ocorrencia[]>();
     for (const o of ocorrenciasDaSemana) {
+      if (o.evento.radar) continue;
       const arr = map.get(o.dataOcorrencia) ?? [];
       arr.push(o);
       map.set(o.dataOcorrencia, arr);
@@ -797,8 +799,12 @@ function Agenda() {
     return map;
   }, [ocorrenciasDoMes]);
 
+  // Radar já aparece no grupo fixo — não duplica na lista do dia.
   const ocorrenciasDoDia = useMemo(
-    () => expandirOcorrencias(eventos, diaSelecionado, diaSelecionado).sort(ordenarOcorrencias),
+    () =>
+      expandirOcorrencias(eventos, diaSelecionado, diaSelecionado)
+        .filter((o) => !o.evento.radar)
+        .sort(ordenarOcorrencias),
     [eventos, diaSelecionado],
   );
 
