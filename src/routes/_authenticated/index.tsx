@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { IconChevronRight } from "@tabler/icons-react";
+import { IconCalendar, IconChevronRight } from "@tabler/icons-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { FraseDoDia } from "@/components/frase-do-dia";
 import { useVocabulario } from "@/features/vocabulario/hooks";
@@ -62,17 +62,29 @@ function Home() {
       border: "border-green-200 dark:border-green-900",
       numero: "text-green-600 dark:text-green-400",
     },
+    {
+      rotulo: "Agenda Pessoal",
+      valor: null,
+      to: "/agenda",
+      bg: "bg-cyan-50 dark:bg-cyan-950/40",
+      border: "border-cyan-200 dark:border-cyan-900",
+      numero: "text-cyan-600 dark:text-cyan-400",
+    },
   ] as const;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
       <FraseDoDia />
 
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-6">
         {stats.map((s) => (
           <Link key={s.to} to={s.to}>
             <Card className={`p-4 ${s.bg} ${s.border}`}>
-              <div className={`text-3xl font-bold ${s.numero}`}>{s.valor}</div>
+              {s.valor == null ? (
+                <IconCalendar className={`size-7 ${s.numero}`} stroke={2} />
+              ) : (
+                <div className={`text-3xl font-bold ${s.numero}`}>{s.valor}</div>
+              )}
               <div className="text-xs text-muted-foreground">{s.rotulo}</div>
             </Card>
           </Link>
