@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
-import { IconHeartbeat } from "@tabler/icons-react";
+import { IconBarbell, IconHeartbeat } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { SectionHeader } from "@/components/ds";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +10,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { dataLocalDe, fmtData, hoje } from "@/lib/data";
 import { useCheckins, useUpsertCheckinHoje } from "@/features/saude/hooks";
+import {
+  useCheckinsAcademia,
+  useDesmarcarCheckinAcademia,
+  useMarcarCheckinAcademiaHoje,
+} from "@/features/academia/hooks";
+import { segundaDaSemana } from "@/features/academia/service";
 
 export const Route = createFileRoute("/_authenticated/saude")({
   component: Saude,
@@ -50,6 +56,28 @@ function Escala({
 function Saude() {
   const { data: checkins = [], isLoading } = useCheckins();
   const salvar = useUpsertCheckinHoje();
+
+  const { data: checkinsAcademia = [] } = useCheckinsAcademia();
+  const marcarAcademia = useMarcarCheckinAcademiaHoje();
+  const desmarcarAcademia = useDesmarcarCheckinAcademia();
+
+  const checkinAcademiaHoje = checkinsAcademia.find((c) => c.data === hoje());
+  const semanaAtual = useMemo(() => segundaDaSemana(hoje()), []);
+  const checkinsNaSemana = useMemo(() => {
+    const [a, m, d] = semanaAtual.split("-").map(Number);
+    const domingo = dataLocalDe(new Date(a, m - 1, d + 6));
+    return checkinsAcademia.filter((c) => c.data >= semanaAtual && c.data <= domingo).length;
+  }, [checkinsAcademia, semanaAtual]);
+
+  function alternarAcademia() {
+    if (checkinAcademiaHoje) {
+      desmarcarAcademia.mutate(checkinAcademiaHoje.id, {
+        onError: (e: Error) => toast.error(e.message),
+      });
+    } else {
+      marcarAcademia.mutate(undefined, { onError: (e: Error) => toast.error(e.message) });
+    }
+  }
 
   const registroHoje = checkins.find((c) => c.data === hoje());
 
@@ -135,6 +163,20 @@ function Saude() {
                 ? "Atualizar check-in"
                 : "Salvar check-in"}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-5">
+        <CardContent className="flex items-center justify-between gap-2 pt-6">
+          <Button
+            variant={checkinAcademiaHoje ? "default" : "outline"}
+            onClick={alternarAcademia}
+            disabled={marcarAcademia.isPending || desmarcarAcademia.isPending}
+          >
+            <IconBarbell className="size-4" />
+            {checkinAcademiaHoje ? "Fui à academia hoje ✓" : "Check Academia"}
+          </Button>
+          <span className="text-xs text-muted-foreground">({checkinsNaSemana}/7)</span>
         </CardContent>
       </Card>
 
