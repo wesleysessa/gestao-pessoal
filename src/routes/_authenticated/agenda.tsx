@@ -201,7 +201,7 @@ function EventoDialog({
     <Dialog open={aberto} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{evento ? "Editar evento" : "Novo evento"}</DialogTitle>
+          <DialogTitle>{evento ? "Agenda - Editar Evento" : "Agenda - Novo Evento"}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
