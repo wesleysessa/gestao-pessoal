@@ -296,9 +296,24 @@ function Diario() {
     return valores.reduce((a, b) => a + b, 0) / valores.length;
   }, [notaPorDia]);
 
+  const aprendizados = useMemo(() => entradas.filter((e) => e.aprendizado).length, [entradas]);
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
       <SectionHeader overline="Gestão Pessoal" title="Diário" />
+
+      {entradas.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+          <span>
+            <strong className="text-foreground">{entradas.length}</strong>{" "}
+            {entradas.length === 1 ? "entrada" : "entradas"}
+          </span>
+          <span>
+            <strong className="text-foreground">{aprendizados}</strong>{" "}
+            {aprendizados === 1 ? "aprendizado" : "aprendizados"} 🌟
+          </span>
+        </div>
+      )}
 
       <Card className="mb-5">
         <CardContent className="pt-6">

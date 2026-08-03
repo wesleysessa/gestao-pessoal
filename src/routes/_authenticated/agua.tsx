@@ -13,7 +13,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { dataLocalDe, fmtData, hoje } from "@/lib/data";
+import { addDias, dataLocalDe, fmtData, hoje, segundaDaSemana } from "@/lib/data";
 import {
   useAgua,
   useCreateRegistroAgua,
@@ -44,6 +44,23 @@ const aguaChartConfig = {
 } satisfies ChartConfig;
 
 const QUANTIDADES_RAPIDAS = [200, 300, 500];
+
+/** Média por dia entre duas datas ISO (inclusive), contando dias sem registro como 0. */
+function mediaPorDia(porDia: Map<string, number>, de: string, ate: string): number {
+  let total = 0;
+  let dias = 0;
+  let cursor = de;
+  while (cursor <= ate) {
+    total += porDia.get(cursor) ?? 0;
+    dias += 1;
+    cursor = addDias(cursor, 1);
+  }
+  return dias ? total / dias : 0;
+}
+
+function litros(ml: number): string {
+  return `${(ml / 1000).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} L`;
+}
 
 function Agua() {
   const { data: registros = [], isLoading } = useAgua();
@@ -80,6 +97,15 @@ function Agua() {
   const registrosHoje = registros.filter((r) => dataLocalDe(r.registrado_em) === hoje());
   const progresso = metaHoje ? Math.min(100, Math.round((totalHoje / metaHoje) * 100)) : null;
 
+  const mediaSemana = useMemo(
+    () => mediaPorDia(totalPorDia, segundaDaSemana(hoje()), hoje()),
+    [totalPorDia],
+  );
+  const mediaMes = useMemo(
+    () => mediaPorDia(totalPorDia, `${hoje().slice(0, 7)}-01`, hoje()),
+    [totalPorDia],
+  );
+
   function adicionarQuantidade(ml: number) {
     if (ml <= 0) return;
     adicionar.mutate(ml, { onError: (e: Error) => toast.error(e.message) });
@@ -102,6 +128,17 @@ function Agua() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
       <SectionHeader overline="Gestão Pessoal" title="Hidratação" />
+
+      {!isLoading && registros.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+          <span>
+            <strong className="text-foreground">{litros(mediaSemana)}</strong> média da semana
+          </span>
+          <span>
+            <strong className="text-foreground">{litros(mediaMes)}</strong> média do mês
+          </span>
+        </div>
+      )}
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>

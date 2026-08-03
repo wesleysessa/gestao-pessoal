@@ -118,9 +118,37 @@ function Saude() {
     [checkinsAcademia],
   );
 
+  const mediasSemana = useMemo(() => {
+    const doSemana = checkins.filter((c) => c.data >= semanaAtual && c.data <= hoje());
+    const energias = doSemana.filter((c) => c.energia != null).map((c) => c.energia as number);
+    const sonos = doSemana.filter((c) => c.sono != null).map((c) => c.sono as number);
+    const mediaEnergia = energias.length
+      ? energias.reduce((a, b) => a + b, 0) / energias.length
+      : null;
+    const mediaSono = sonos.length ? sonos.reduce((a, b) => a + b, 0) / sonos.length : null;
+    return { mediaEnergia, mediaSono };
+  }, [checkins, semanaAtual]);
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
       <SectionHeader overline="Gestão Pessoal" title="Saúde" />
+
+      {(mediasSemana.mediaEnergia != null || mediasSemana.mediaSono != null) && (
+        <div className="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+          {mediasSemana.mediaEnergia != null && (
+            <span>
+              <strong className="text-foreground">{mediasSemana.mediaEnergia.toFixed(1)}</strong>{" "}
+              energia média (semana)
+            </span>
+          )}
+          {mediasSemana.mediaSono != null && (
+            <span>
+              <strong className="text-foreground">{mediasSemana.mediaSono.toFixed(1)}h</strong> sono
+              médio (semana)
+            </span>
+          )}
+        </div>
+      )}
 
       <Card className="mb-5">
         <CardContent className="pt-6">

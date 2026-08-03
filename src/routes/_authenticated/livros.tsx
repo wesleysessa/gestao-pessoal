@@ -79,6 +79,13 @@ function Livros() {
     <div className="mx-auto max-w-2xl px-4 py-4">
       <SectionHeader overline="Gestão Pessoal" title="Livros" />
 
+      {livros.length > 0 && (
+        <div className="mb-4 text-xs text-muted-foreground">
+          <strong className="text-foreground">{livros.length}</strong>{" "}
+          {livros.length === 1 ? "livro lido" : "livros lidos"}
+        </div>
+      )}
+
       <Card className="mb-5">
         <CardContent className="pt-6">
           {editando && (

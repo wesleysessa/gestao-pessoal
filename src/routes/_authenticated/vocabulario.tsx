@@ -112,6 +112,19 @@ function Vocabulario() {
     <div className="mx-auto max-w-2xl px-4 py-4">
       <SectionHeader overline="Gestão Pessoal" title="Vocabulário" />
 
+      {itens.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+          <span>
+            <strong className="text-foreground">{idiomas.length}</strong>{" "}
+            {idiomas.length === 1 ? "idioma" : "idiomas"}
+          </span>
+          <span>
+            <strong className="text-foreground">{itens.length}</strong>{" "}
+            {itens.length === 1 ? "palavra" : "palavras"}
+          </span>
+        </div>
+      )}
+
       <Card className="mb-5">
         <CardContent className="pt-6">
           <Label className="mb-3 block">{editando ? "Editando palavra" : "Nova palavra"}</Label>
