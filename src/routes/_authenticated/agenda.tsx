@@ -618,6 +618,60 @@ function MenuMoverDia({
   );
 }
 
+/** Grupo fixo "Radar" — mesmo componente usado no Modo Calendário e no Quadro da Semana. */
+function GrupoRadar({
+  ocorrencias,
+  conclusaoPorChave,
+  hojeIso,
+  diasDaSemana,
+  abrirEdicao,
+  alternarConcluido,
+  moverEvento,
+}: {
+  ocorrencias: Ocorrencia[];
+  conclusaoPorChave: Map<string, string>;
+  hojeIso: string;
+  diasDaSemana: { iso: string; label: string }[];
+  abrirEdicao: (evento: Evento) => void;
+  alternarConcluido: (o: Ocorrencia) => void;
+  moverEvento: (evento: Evento, novaData: string) => void;
+}) {
+  if (ocorrencias.length === 0) return null;
+  return (
+    <Card className="mb-4 border-primary/40 bg-primary/5">
+      <CardContent className="p-3.5">
+        <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-primary">
+          👁️ Radar
+        </div>
+        <div className="flex flex-col gap-2">
+          {ocorrencias.map((o) => {
+            const concluido = conclusaoPorChave.has(chaveOcorrencia(o.evento.id, o.dataOcorrencia));
+            const atrasado = !concluido && !o.evento.aniversario && o.dataOcorrencia < hojeIso;
+            return (
+              <CardOcorrencia
+                key={`radar-${o.evento.id}-${o.dataOcorrencia}`}
+                o={o}
+                concluido={concluido}
+                atrasado={atrasado}
+                onClick={() => abrirEdicao(o.evento)}
+                onToggleConcluido={() => alternarConcluido(o)}
+                acaoExtra={
+                  <MenuMoverDia
+                    evento={o.evento}
+                    dataAtual={o.dataOcorrencia}
+                    diasDaSemana={diasDaSemana}
+                    onMover={(novaData) => moverEvento(o.evento, novaData)}
+                  />
+                }
+              />
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function Agenda() {
   const { data: eventos = [], isLoading } = useEventos();
   const { data: conclusoes = [] } = useConclusoes();
@@ -893,6 +947,16 @@ function Agenda() {
             </CardContent>
           </Card>
 
+          <GrupoRadar
+            ocorrencias={radarDaSemana}
+            conclusaoPorChave={conclusaoPorChave}
+            hojeIso={hojeIso}
+            diasDaSemana={diasDaSemana}
+            abrirEdicao={abrirEdicao}
+            alternarConcluido={alternarConcluido}
+            moverEvento={moverEvento}
+          />
+
           <div className="mb-3 text-sm font-semibold text-foreground">
             {fmtData(diaSelecionado)}
             {diaSelecionado === hojeIso && (
@@ -952,42 +1016,15 @@ function Agenda() {
             </button>
           </div>
 
-          {radarDaSemana.length > 0 && (
-            <Card className="mb-4 border-primary/40 bg-primary/5">
-              <CardContent className="p-3.5">
-                <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-primary">
-                  👁️ Radar
-                </div>
-                <div className="flex flex-col gap-2">
-                  {radarDaSemana.map((o) => {
-                    const concluido = conclusaoPorChave.has(
-                      chaveOcorrencia(o.evento.id, o.dataOcorrencia),
-                    );
-                    const atrasado =
-                      !concluido && !o.evento.aniversario && o.dataOcorrencia < hojeIso;
-                    return (
-                      <CardOcorrencia
-                        key={`radar-${o.evento.id}-${o.dataOcorrencia}`}
-                        o={o}
-                        concluido={concluido}
-                        atrasado={atrasado}
-                        onClick={() => abrirEdicao(o.evento)}
-                        onToggleConcluido={() => alternarConcluido(o)}
-                        acaoExtra={
-                          <MenuMoverDia
-                            evento={o.evento}
-                            dataAtual={o.dataOcorrencia}
-                            diasDaSemana={diasDaSemana}
-                            onMover={(novaData) => moverEvento(o.evento, novaData)}
-                          />
-                        }
-                      />
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <GrupoRadar
+            ocorrencias={radarDaSemana}
+            conclusaoPorChave={conclusaoPorChave}
+            hojeIso={hojeIso}
+            diasDaSemana={diasDaSemana}
+            abrirEdicao={abrirEdicao}
+            alternarConcluido={alternarConcluido}
+            moverEvento={moverEvento}
+          />
 
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Carregando…</p>
