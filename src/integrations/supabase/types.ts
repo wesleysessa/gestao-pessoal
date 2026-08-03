@@ -23,6 +23,8 @@ export type Database = {
           recorrencia: string;
           recorrencia_fim: string | null;
           lembrete_minutos: number | null;
+          aniversario: boolean;
+          destaque: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -41,6 +43,8 @@ export type Database = {
           recorrencia?: string;
           recorrencia_fim?: string | null;
           lembrete_minutos?: number | null;
+          aniversario?: boolean;
+          destaque?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -59,6 +63,8 @@ export type Database = {
           recorrencia?: string;
           recorrencia_fim?: string | null;
           lembrete_minutos?: number | null;
+          aniversario?: boolean;
+          destaque?: boolean;
           created_at?: string;
           updated_at?: string;
         };

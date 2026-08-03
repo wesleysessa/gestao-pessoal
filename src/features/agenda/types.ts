@@ -16,6 +16,8 @@ export type NovoEvento = Pick<
   | "recorrencia"
   | "recorrencia_fim"
   | "lembrete_minutos"
+  | "aniversario"
+  | "destaque"
 >;
 
 /** Uma ocorrência materializada de um evento numa data específica (recorrência já expandida). */

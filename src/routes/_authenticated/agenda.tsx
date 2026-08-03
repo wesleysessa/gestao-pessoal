@@ -75,11 +75,14 @@ function hhmm(v: string | null): string {
 }
 
 function horarioOcorrencia(o: Ocorrencia): string {
+  if (o.evento.aniversario) return "Aniversário 🎂";
   if (o.evento.dia_inteiro) return "Dia inteiro";
   const ini = hhmm(o.evento.hora_inicio);
   const fim = hhmm(o.evento.hora_fim);
   return fim ? `${ini} – ${fim}` : ini;
 }
+
+const COR_ANIVERSARIO: CorEvento = "flamingo";
 
 type FormValues = {
   titulo: string;
@@ -94,6 +97,8 @@ type FormValues = {
   recorrencia: Recorrencia;
   recorrenciaFim: string;
   lembreteMinutos: number | null;
+  aniversario: boolean;
+  destaque: boolean;
 };
 
 function valoresVazios(dataPadrao: string): FormValues {
@@ -110,6 +115,8 @@ function valoresVazios(dataPadrao: string): FormValues {
     recorrencia: "nenhuma",
     recorrenciaFim: "",
     lembreteMinutos: null,
+    aniversario: false,
+    destaque: false,
   };
 }
 
@@ -127,6 +134,8 @@ function valoresDoEvento(e: Evento): FormValues {
     recorrencia: e.recorrencia as Recorrencia,
     recorrenciaFim: e.recorrencia_fim ?? "",
     lembreteMinutos: e.lembrete_minutos,
+    aniversario: e.aniversario,
+    destaque: e.destaque,
   };
 }
 
@@ -155,30 +164,43 @@ function EventoDialog({
   const set = <K extends keyof FormValues>(key: K, val: FormValues[K]) =>
     setV((prev) => ({ ...prev, [key]: val }));
 
+  function alternarAniversario() {
+    setV((prev) =>
+      prev.aniversario
+        ? { ...prev, aniversario: false }
+        : { ...prev, aniversario: true, diaInteiro: true, recorrencia: "anual" },
+    );
+  }
+
   const salvando = criar.isPending || atualizar.isPending;
+  const diaInteiroEfetivo = v.aniversario || v.diaInteiro;
 
   function salvar() {
     if (!v.titulo.trim()) {
       toast.error("Dê um título pro evento");
       return;
     }
-    if (!v.diaInteiro && !v.horaInicio) {
+    const diaInteiro = v.aniversario || v.diaInteiro;
+    if (!diaInteiro && !v.horaInicio) {
       toast.error("Informe o horário de início");
       return;
     }
+    const recorrencia = v.aniversario ? "anual" : v.recorrencia;
     const input: NovoEvento = {
       titulo: v.titulo.trim(),
       descricao: v.descricao.trim() || null,
       local: v.local.trim() || null,
-      dia_inteiro: v.diaInteiro,
+      dia_inteiro: diaInteiro,
       data: v.data,
-      data_fim: v.diaInteiro && v.dataFim ? v.dataFim : null,
-      hora_inicio: v.diaInteiro ? null : v.horaInicio,
-      hora_fim: v.diaInteiro ? null : v.horaFim || null,
-      cor: v.cor,
-      recorrencia: v.recorrencia,
-      recorrencia_fim: v.recorrencia !== "nenhuma" && v.recorrenciaFim ? v.recorrenciaFim : null,
+      data_fim: !v.aniversario && diaInteiro && v.dataFim ? v.dataFim : null,
+      hora_inicio: diaInteiro ? null : v.horaInicio,
+      hora_fim: diaInteiro ? null : v.horaFim || null,
+      cor: v.aniversario ? COR_ANIVERSARIO : v.cor,
+      recorrencia,
+      recorrencia_fim: recorrencia !== "nenhuma" && v.recorrenciaFim ? v.recorrenciaFim : null,
       lembrete_minutos: v.lembreteMinutos,
+      aniversario: v.aniversario,
+      destaque: v.destaque,
     };
     const onOk = () => onOpenChange(false);
     const onErr = (e: Error) => toast.error(e.message);
@@ -214,35 +236,50 @@ function EventoDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            {(
-              [
-                [false, "Com horário"],
-                [true, "Dia inteiro"],
-              ] as [boolean, string][]
-            ).map(([val, label]) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => set("diaInteiro", val)}
-                className={cn(
-                  "rounded-md border px-3 py-2 text-sm font-medium transition",
-                  v.diaInteiro === val
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-input text-foreground",
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <button
+            type="button"
+            onClick={alternarAniversario}
+            className={cn(
+              "flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition",
+              v.aniversario
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-input text-foreground",
+            )}
+          >
+            🎂 Aniversário
+          </button>
+
+          {!v.aniversario && (
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  [false, "Com horário"],
+                  [true, "Dia inteiro"],
+                ] as [boolean, string][]
+              ).map(([val, label]) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => set("diaInteiro", val)}
+                  className={cn(
+                    "rounded-md border px-3 py-2 text-sm font-medium transition",
+                    v.diaInteiro === val
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-input text-foreground",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
-              <Label>{v.diaInteiro ? "De" : "Data"}</Label>
+              <Label>{diaInteiroEfetivo ? "De" : "Data"}</Label>
               <Input type="date" value={v.data} onChange={(e) => set("data", e.target.value)} />
             </div>
-            {v.diaInteiro && (
+            {diaInteiroEfetivo && !v.aniversario && (
               <div className="space-y-1.5">
                 <Label>Até (opcional)</Label>
                 <Input
@@ -255,7 +292,7 @@ function EventoDialog({
             )}
           </div>
 
-          {!v.diaInteiro && (
+          {!diaInteiroEfetivo && (
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
                 <Label>Início</Label>
@@ -294,58 +331,80 @@ function EventoDialog({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Cor</Label>
-            <div className="flex flex-wrap gap-2">
-              {CORES_EVENTO_ORDEM.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => set("cor", c)}
-                  aria-label={CORES_EVENTO[c].label}
-                  title={CORES_EVENTO[c].label}
-                  className={cn(
-                    "size-7 rounded-full transition",
-                    CORES_EVENTO[c].dot,
-                    v.cor === c &&
-                      cn("ring-2 ring-offset-2 ring-offset-card", CORES_EVENTO[c].ring),
-                  )}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
+          {!v.aniversario && (
             <div className="space-y-1.5">
-              <Label>Repetir</Label>
-              <Select
-                value={v.recorrencia}
-                onValueChange={(val) => set("recorrencia", val as Recorrencia)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {RECORRENCIAS.map((r) => (
-                    <SelectItem key={r} value={r}>
-                      {RECORRENCIA_LABEL[r]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {v.recorrencia !== "nenhuma" && (
-              <div className="space-y-1.5">
-                <Label>Repetir até (opcional)</Label>
-                <Input
-                  type="date"
-                  value={v.recorrenciaFim}
-                  min={v.data}
-                  onChange={(e) => set("recorrenciaFim", e.target.value)}
-                />
+              <Label>Cor</Label>
+              <div className="flex flex-wrap gap-2">
+                {CORES_EVENTO_ORDEM.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => set("cor", c)}
+                    aria-label={CORES_EVENTO[c].label}
+                    title={CORES_EVENTO[c].label}
+                    className={cn(
+                      "size-7 rounded-full transition",
+                      CORES_EVENTO[c].dot,
+                      v.cor === c &&
+                        cn("ring-2 ring-offset-2 ring-offset-card", CORES_EVENTO[c].ring),
+                    )}
+                  />
+                ))}
               </div>
+            </div>
+          )}
+
+          {v.aniversario ? (
+            <p className="text-xs text-muted-foreground">
+              🎂 Repete todo ano, dia inteiro, na cor rosa — fica fácil de bater o olho no
+              calendário.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label>Repetir</Label>
+                <Select
+                  value={v.recorrencia}
+                  onValueChange={(val) => set("recorrencia", val as Recorrencia)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RECORRENCIAS.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {RECORRENCIA_LABEL[r]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {v.recorrencia !== "nenhuma" && (
+                <div className="space-y-1.5">
+                  <Label>Repetir até (opcional)</Label>
+                  <Input
+                    type="date"
+                    value={v.recorrenciaFim}
+                    min={v.data}
+                    onChange={(e) => set("recorrenciaFim", e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => set("destaque", !v.destaque)}
+            className={cn(
+              "flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition",
+              v.destaque
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-input text-foreground",
             )}
-          </div>
+          >
+            🔝 Destacar (aparece primeiro na lista do dia)
+          </button>
 
           <div className="space-y-1.5">
             <Label>Lembrete</Label>
@@ -420,12 +479,12 @@ function Agenda() {
     [eventos, ano, mesIdx, totalDias],
   );
 
-  const coresPorDia = useMemo(() => {
-    const map = new Map<string, CorEvento[]>();
+  const marcasPorDia = useMemo(() => {
+    const map = new Map<string, { cor: CorEvento; aniversario: boolean }[]>();
     for (const o of ocorrenciasDoMes) {
-      const cores = map.get(o.dataOcorrencia) ?? [];
-      cores.push(o.evento.cor as CorEvento);
-      map.set(o.dataOcorrencia, cores);
+      const marcas = map.get(o.dataOcorrencia) ?? [];
+      marcas.push({ cor: o.evento.cor as CorEvento, aniversario: o.evento.aniversario });
+      map.set(o.dataOcorrencia, marcas);
     }
     return map;
   }, [ocorrenciasDoMes]);
@@ -433,6 +492,7 @@ function Agenda() {
   const ocorrenciasDoDia = useMemo(
     () =>
       expandirOcorrencias(eventos, diaSelecionado, diaSelecionado).sort((a, b) => {
+        if (a.evento.destaque !== b.evento.destaque) return a.evento.destaque ? -1 : 1;
         if (a.evento.dia_inteiro !== b.evento.dia_inteiro) return a.evento.dia_inteiro ? -1 : 1;
         return (a.evento.hora_inicio ?? "").localeCompare(b.evento.hora_inicio ?? "");
       }),
@@ -486,7 +546,7 @@ function Agenda() {
               const iso = isoDoDia(ano, mesIdx, dia);
               const ehHoje = iso === hojeIso;
               const ehSelecionado = iso === diaSelecionado;
-              const cores = coresPorDia.get(iso) ?? [];
+              const marcas = marcasPorDia.get(iso) ?? [];
               return (
                 <button
                   key={iso}
@@ -506,13 +566,19 @@ function Agenda() {
                   >
                     {dia}
                   </span>
-                  <span className="flex h-1.5 items-center gap-0.5">
-                    {cores.slice(0, 3).map((c, idx) => (
-                      <span
-                        key={idx}
-                        className={cn("size-1.5 rounded-full", CORES_EVENTO[c].dot)}
-                      />
-                    ))}
+                  <span className="flex h-2.5 items-center gap-0.5">
+                    {marcas.slice(0, 3).map((m, idx) =>
+                      m.aniversario ? (
+                        <span key={idx} className="text-[10px] leading-none">
+                          🎂
+                        </span>
+                      ) : (
+                        <span
+                          key={idx}
+                          className={cn("size-1.5 rounded-full", CORES_EVENTO[m.cor].dot)}
+                        />
+                      ),
+                    )}
                   </span>
                 </button>
               );
@@ -541,18 +607,26 @@ function Agenda() {
             <Card
               key={`${o.evento.id}-${o.dataOcorrencia}`}
               onClick={() => abrirEdicao(o.evento)}
-              className="cursor-pointer transition hover:border-muted-foreground/40"
+              className={cn(
+                "cursor-pointer transition hover:border-muted-foreground/40",
+                o.evento.destaque && "border-primary",
+              )}
             >
               <CardContent className="flex items-start gap-3 p-3.5">
-                <span
-                  className={cn(
-                    "mt-1.5 size-2.5 shrink-0 rounded-full",
-                    CORES_EVENTO[o.evento.cor as CorEvento].dot,
-                  )}
-                />
+                {o.evento.aniversario ? (
+                  <span className="mt-0.5 shrink-0 text-sm leading-none">🎂</span>
+                ) : (
+                  <span
+                    className={cn(
+                      "mt-1.5 size-2.5 shrink-0 rounded-full",
+                      CORES_EVENTO[o.evento.cor as CorEvento].dot,
+                    )}
+                  />
+                )}
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold text-foreground">
-                    {o.evento.titulo}
+                  <div className="flex items-center gap-1 truncate text-sm font-semibold text-foreground">
+                    {o.evento.destaque && <span className="shrink-0">🔝</span>}
+                    <span className="truncate">{o.evento.titulo}</span>
                   </div>
                   <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                     <IconClock className="size-3.5" />
