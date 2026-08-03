@@ -7,6 +7,30 @@ export type Database = {
   };
   public: {
     Tables: {
+      agenda_conclusoes: {
+        Row: {
+          id: string;
+          user_id: string;
+          evento_id: string;
+          data: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          evento_id: string;
+          data: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          evento_id?: string;
+          data?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       academia_checkins: {
         Row: {
           id: string;

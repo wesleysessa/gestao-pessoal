@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  IconAlertTriangle,
   IconCalendarEvent,
   IconChevronLeft,
   IconChevronRight,
+  IconCircle,
+  IconCircleCheck,
   IconClock,
   IconMapPin,
   IconTrash,
@@ -24,11 +27,14 @@ import {
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { fmtData, hoje } from "@/lib/data";
+import { addDias, fmtData, hoje } from "@/lib/data";
 import {
+  useConclusoes,
   useCreateEvento,
   useDeleteEvento,
+  useDesmarcarConcluido,
   useEventos,
+  useMarcarConcluido,
   useUpdateEvento,
 } from "@/features/agenda/hooks";
 import { expandirOcorrencias } from "@/features/agenda/service";
@@ -72,6 +78,10 @@ function isoDoDia(ano: number, mesIdx0: number, dia: number) {
 /** Postgres devolve "HH:MM:SS" — input[type=time] quer "HH:MM". */
 function hhmm(v: string | null): string {
   return v ? v.slice(0, 5) : "";
+}
+
+function chaveOcorrencia(eventoId: string, data: string): string {
+  return `${eventoId}|${data}`;
 }
 
 function horarioOcorrencia(o: Ocorrencia): string {
@@ -456,6 +466,27 @@ function EventoDialog({
 
 function Agenda() {
   const { data: eventos = [], isLoading } = useEventos();
+  const { data: conclusoes = [] } = useConclusoes();
+  const marcarConcluido = useMarcarConcluido();
+  const desmarcarConcluido = useDesmarcarConcluido();
+
+  const conclusaoPorChave = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of conclusoes) map.set(chaveOcorrencia(c.evento_id, c.data), c.id);
+    return map;
+  }, [conclusoes]);
+
+  function alternarConcluido(o: Ocorrencia) {
+    const idExistente = conclusaoPorChave.get(chaveOcorrencia(o.evento.id, o.dataOcorrencia));
+    if (idExistente) {
+      desmarcarConcluido.mutate(idExistente, { onError: (e: Error) => toast.error(e.message) });
+    } else {
+      marcarConcluido.mutate(
+        { eventoId: o.evento.id, data: o.dataOcorrencia },
+        { onError: (e: Error) => toast.error(e.message) },
+      );
+    }
+  }
 
   const agora = new Date();
   const [mesExibido, setMesExibido] = useState(
@@ -501,6 +532,19 @@ function Agenda() {
     [eventos, diaSelecionado],
   );
 
+  /** Eventos passados (últimos 60 dias) sem conclusão — candidatos a reagendar. Aniversário não entra. */
+  const pendencias = useMemo(() => {
+    const inicio = addDias(hojeIso, -60);
+    const fim = addDias(hojeIso, -1);
+    return expandirOcorrencias(eventos, inicio, fim)
+      .filter(
+        (o) =>
+          !o.evento.aniversario &&
+          !conclusaoPorChave.has(chaveOcorrencia(o.evento.id, o.dataOcorrencia)),
+      )
+      .sort((a, b) => a.dataOcorrencia.localeCompare(b.dataOcorrencia));
+  }, [eventos, hojeIso, conclusaoPorChave]);
+
   function abrirNovo() {
     setEditando(null);
     setDialogAberto(true);
@@ -514,6 +558,35 @@ function Agenda() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
       <SectionHeader overline="Gestão Pessoal" title="Agenda" />
+
+      {pendencias.length > 0 && (
+        <Card className="mb-4 border-destructive/40 bg-destructive/5">
+          <CardContent className="p-3.5">
+            <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-destructive">
+              <IconAlertTriangle className="size-4" />
+              Pendências ({pendencias.length})
+            </div>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Passaram sem conclusão — toque pra ver o dia e reagendar.
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {pendencias.map((o) => (
+                <button
+                  key={chaveOcorrencia(o.evento.id, o.dataOcorrencia)}
+                  type="button"
+                  onClick={() => setDiaSelecionado(o.dataOcorrencia)}
+                  className="flex items-center justify-between gap-2 rounded-md bg-card px-2.5 py-1.5 text-left text-xs transition hover:bg-muted"
+                >
+                  <span className="truncate font-medium text-foreground">{o.evento.titulo}</span>
+                  <span className="shrink-0 text-muted-foreground">
+                    {fmtData(o.dataOcorrencia)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="mb-4">
         <CardContent className="pt-5">
@@ -605,45 +678,78 @@ function Agenda() {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {ocorrenciasDoDia.map((o) => (
-            <Card
-              key={`${o.evento.id}-${o.dataOcorrencia}`}
-              onClick={() => abrirEdicao(o.evento)}
-              className={cn(
-                "cursor-pointer transition hover:border-muted-foreground/40",
-                o.evento.destaque && "border-primary",
-              )}
-            >
-              <CardContent className="flex items-start gap-3 p-3.5">
-                {o.evento.aniversario ? (
-                  <span className="mt-0.5 shrink-0 text-sm leading-none">🎂</span>
-                ) : (
-                  <span
-                    className={cn(
-                      "mt-1.5 size-2.5 shrink-0 rounded-full",
-                      CORES_EVENTO[o.evento.cor as CorEvento].dot,
-                    )}
-                  />
+          {ocorrenciasDoDia.map((o) => {
+            const concluido = conclusaoPorChave.has(chaveOcorrencia(o.evento.id, o.dataOcorrencia));
+            const atrasado = !concluido && !o.evento.aniversario && o.dataOcorrencia < hojeIso;
+            return (
+              <Card
+                key={`${o.evento.id}-${o.dataOcorrencia}`}
+                onClick={() => abrirEdicao(o.evento)}
+                className={cn(
+                  "cursor-pointer transition hover:border-muted-foreground/40",
+                  o.evento.destaque && "border-primary",
+                  atrasado && "border-destructive/40",
                 )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1 truncate text-sm font-semibold text-foreground">
-                    {o.evento.destaque && <span className="shrink-0">🔝</span>}
-                    <span className="truncate">{o.evento.titulo}</span>
-                  </div>
-                  <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                    <IconClock className="size-3.5" />
-                    {horarioOcorrencia(o)}
-                  </div>
-                  {o.evento.local && (
-                    <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                      <IconMapPin className="size-3.5" />
-                      {o.evento.local}
-                    </div>
+              >
+                <CardContent className="flex items-start gap-3 p-3.5">
+                  {o.evento.aniversario ? (
+                    <span className="mt-0.5 shrink-0 text-sm leading-none">🎂</span>
+                  ) : (
+                    <span
+                      className={cn(
+                        "mt-1.5 size-2.5 shrink-0 rounded-full",
+                        CORES_EVENTO[o.evento.cor as CorEvento].dot,
+                      )}
+                    />
                   )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1 truncate text-sm font-semibold text-foreground">
+                      {o.evento.destaque && <span className="shrink-0">🔝</span>}
+                      <span
+                        className={cn(
+                          "truncate",
+                          concluido && "text-muted-foreground line-through",
+                        )}
+                      >
+                        {o.evento.titulo}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                      <IconClock className="size-3.5" />
+                      {horarioOcorrencia(o)}
+                      {atrasado && (
+                        <span className="ml-1 font-semibold text-destructive">Atrasado</span>
+                      )}
+                    </div>
+                    {o.evento.local && (
+                      <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                        <IconMapPin className="size-3.5" />
+                        {o.evento.local}
+                      </div>
+                    )}
+                  </div>
+                  {!o.evento.aniversario && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        alternarConcluido(o);
+                      }}
+                      aria-label={concluido ? "Desmarcar concluído" : "Marcar concluído"}
+                      title={concluido ? "Desmarcar concluído" : "Marcar concluído"}
+                      className="shrink-0 text-muted-foreground transition hover:text-primary"
+                    >
+                      {concluido ? (
+                        <IconCircleCheck className="size-5 text-primary" />
+                      ) : (
+                        <IconCircle className="size-5" />
+                      )}
+                    </button>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 

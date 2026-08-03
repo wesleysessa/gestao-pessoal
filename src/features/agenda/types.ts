@@ -26,6 +26,8 @@ export type Ocorrencia = {
   dataOcorrencia: string;
 };
 
+export type Conclusao = Database["public"]["Tables"]["agenda_conclusoes"]["Row"];
+
 export type CorEvento =
   | "tomato"
   | "flamingo"

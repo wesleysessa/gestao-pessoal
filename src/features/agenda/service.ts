@@ -23,6 +23,22 @@ export async function deleteEvento(id: string) {
   if (error) throw error;
 }
 
+export async function listConclusoes() {
+  const { data, error } = await supabase.from("agenda_conclusoes").select("*");
+  if (error) throw error;
+  return data;
+}
+
+export async function marcarConcluido(eventoId: string, data: string) {
+  const { error } = await supabase.from("agenda_conclusoes").insert({ evento_id: eventoId, data });
+  if (error) throw error;
+}
+
+export async function desmarcarConcluido(id: string) {
+  const { error } = await supabase.from("agenda_conclusoes").delete().eq("id", id);
+  if (error) throw error;
+}
+
 function addDias(iso: string, n: number): string {
   const [a, m, d] = iso.split("-").map(Number);
   const dt = new Date(a, m - 1, d + n);
