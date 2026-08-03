@@ -70,6 +70,7 @@ export type Database = {
           lembrete_minutos: number | null;
           aniversario: boolean;
           destaque: boolean;
+          radar: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -90,6 +91,7 @@ export type Database = {
           lembrete_minutos?: number | null;
           aniversario?: boolean;
           destaque?: boolean;
+          radar?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -110,6 +112,7 @@ export type Database = {
           lembrete_minutos?: number | null;
           aniversario?: boolean;
           destaque?: boolean;
+          radar?: boolean;
           created_at?: string;
           updated_at?: string;
         };
