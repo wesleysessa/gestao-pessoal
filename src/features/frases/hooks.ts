@@ -36,6 +36,7 @@ export function useFraseDoDia() {
 
   return {
     frase,
+    total: frases.length,
     temFrases: frases.length > 0,
     temMaisDeUma: frases.length > 1,
     isLoading,

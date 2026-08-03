@@ -132,7 +132,7 @@ function GestaoFrases() {
 }
 
 export function FraseDoDia() {
-  const { frase, temFrases, temMaisDeUma, proxima, navegandoManualmente, voltarADoDia } =
+  const { frase, total, temFrases, temMaisDeUma, proxima, navegandoManualmente, voltarADoDia } =
     useFraseDoDia();
   const [aberto, setAberto] = useState(false);
 
@@ -148,20 +148,30 @@ export function FraseDoDia() {
               <IconQuote className="size-3.5" />
               Frase do dia
             </div>
-            {temMaisDeUma && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  proxima();
-                }}
-                aria-label="Próxima frase"
-                title="Próxima frase"
-                className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              >
-                <IconArrowsShuffle className="size-3.5" />
-                Próxima
-              </button>
+            {temFrases && (
+              <div className="flex items-center gap-1.5">
+                <span
+                  title={`${total} frase${total === 1 ? "" : "s"} no banco`}
+                  className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-secondary-foreground"
+                >
+                  ({String(total).padStart(2, "0")})
+                </span>
+                {temMaisDeUma && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      proxima();
+                    }}
+                    aria-label="Próxima frase"
+                    title="Próxima frase"
+                    className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                  >
+                    <IconArrowsShuffle className="size-3.5" />
+                    Próxima
+                  </button>
+                )}
+              </div>
             )}
           </div>
           {temFrases && frase ? (
