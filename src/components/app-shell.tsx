@@ -14,6 +14,7 @@ import {
   IconFlame,
   IconPin,
   IconPinFilled,
+  IconBarbell,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
@@ -31,6 +32,7 @@ import { StreakCalendarDialog } from "@/components/streak-calendar";
 import { AppLogo } from "@/components/app-logo";
 import { WaterCupIcon } from "@/components/water-cup-icon";
 import { useHidratacaoHoje } from "@/features/agua/hooks";
+import { useFoiAcademiaHoje } from "@/features/academia/hooks";
 import { MENU_MODULOS } from "@/features/menu-modulos";
 
 const drawerSections = [{ label: "Início", to: "/", icon: IconHome }, ...MENU_MODULOS];
@@ -79,6 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { isStandalone } = usePwaInstall();
   const { streakExibido } = useStreakResumo();
   const { progresso: hidratacaoProgresso } = useHidratacaoHoje();
+  const foiAcademiaHoje = useFoiAcademiaHoje();
 
   const isRoot = pathname === "/";
   const tituloSecao = sectionTitle(pathname);
@@ -275,6 +278,21 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
 
         <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/saude" })}
+            aria-label="Academia hoje"
+            title={foiAcademiaHoje ? "Foi à academia hoje" : "Ainda não foi à academia hoje"}
+            className="flex shrink-0 items-center rounded-full bg-secondary px-2 py-1 transition hover:bg-muted"
+          >
+            <IconBarbell
+              className={cn(
+                "size-4",
+                foiAcademiaHoje ? "text-primary" : "text-muted-foreground/40",
+              )}
+            />
+          </button>
+
           {hidratacaoProgresso != null && (
             <button
               type="button"

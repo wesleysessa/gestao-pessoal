@@ -4,11 +4,18 @@ import {
   listCheckinsAcademia,
   marcarCheckinAcademiaHoje,
 } from "./service";
+import { hoje } from "@/lib/data";
 
 const KEY = ["academia-checkins"];
 
 export function useCheckinsAcademia() {
   return useQuery({ queryKey: KEY, queryFn: listCheckinsAcademia });
+}
+
+/** Se já houve check-in da academia hoje — usado no pill do cabeçalho. */
+export function useFoiAcademiaHoje() {
+  const { data: checkins = [] } = useCheckinsAcademia();
+  return checkins.some((c) => c.data === hoje());
 }
 
 export function useMarcarCheckinAcademiaHoje() {

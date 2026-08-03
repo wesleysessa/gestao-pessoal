@@ -114,6 +114,11 @@ function Saude() {
     [checkins],
   );
 
+  const diasComAcademia = useMemo(
+    () => new Set(checkinsAcademia.map((c) => c.data)),
+    [checkinsAcademia],
+  );
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
       <SectionHeader overline="Gestão Pessoal" title="Saúde" />
@@ -221,6 +226,11 @@ function Saude() {
                 <span>Humor: {HUMORES[c.humor - 1]}</span>
                 {!!c.energia && <span>Energia: {c.energia}/5</span>}
                 {c.sono != null && <span>Sono: {c.sono}h</span>}
+                {diasComAcademia.has(c.data) && (
+                  <span className="ml-auto text-base" title="Foi à academia">
+                    🏋️
+                  </span>
+                )}
                 {c.obs && <span className="w-full text-xs text-muted-foreground">{c.obs}</span>}
               </CardContent>
             </Card>
