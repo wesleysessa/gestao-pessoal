@@ -22,3 +22,19 @@ export function fmtData(iso: string): string {
   const [a, m, d] = iso.split("-");
   return `${d}/${m}/${a}`;
 }
+
+/** Soma (ou subtrai) dias a uma data ISO (yyyy-mm-dd), no calendário local. */
+export function addDias(iso: string, n: number): string {
+  const [a, m, d] = iso.split("-").map(Number);
+  return dataLocalDe(new Date(a, m - 1, d + n));
+}
+
+/** Segunda-feira (início da semana) da semana que contém a data informada. */
+export function segundaDaSemana(dataISO: string): string {
+  const [a, m, d] = dataISO.split("-").map(Number);
+  const dt = new Date(a, m - 1, d);
+  const diaSemana = dt.getDay(); // 0 = domingo
+  const offset = diaSemana === 0 ? 6 : diaSemana - 1;
+  dt.setDate(dt.getDate() - offset);
+  return dataLocalDe(dt);
+}

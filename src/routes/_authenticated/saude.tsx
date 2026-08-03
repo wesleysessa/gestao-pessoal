@@ -8,14 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { dataLocalDe, fmtData, hoje } from "@/lib/data";
+import { dataLocalDe, fmtData, hoje, segundaDaSemana } from "@/lib/data";
 import { useCheckins, useUpsertCheckinHoje } from "@/features/saude/hooks";
 import {
   useCheckinsAcademia,
   useDesmarcarCheckinAcademia,
   useMarcarCheckinAcademiaHoje,
 } from "@/features/academia/hooks";
-import { segundaDaSemana } from "@/features/academia/service";
 
 export const Route = createFileRoute("/_authenticated/saude")({
   component: Saude,

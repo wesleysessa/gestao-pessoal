@@ -24,13 +24,3 @@ export async function desmarcarCheckinAcademia(id: string) {
   const { error } = await supabase.from("academia_checkins").delete().eq("id", id);
   if (error) throw error;
 }
-
-/** Segunda-feira (início da semana) da semana que contém a data informada. */
-export function segundaDaSemana(dataISO: string): string {
-  const [a, m, d] = dataISO.split("-").map(Number);
-  const dt = new Date(a, m - 1, d);
-  const diaSemana = dt.getDay(); // 0 = domingo
-  const offset = diaSemana === 0 ? 6 : diaSemana - 1;
-  dt.setDate(dt.getDate() - offset);
-  return dataLocalDe(dt);
-}
