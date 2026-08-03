@@ -221,231 +221,233 @@ function EventoDialog({
 
   return (
     <Dialog open={aberto} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[85vh] max-w-md flex-col gap-0 p-0">
+        <DialogHeader className="shrink-0 border-b border-border px-6 pb-3 pt-6">
           <DialogTitle>{evento ? "Agenda - Editar Evento" : "Agenda - Novo Evento"}</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-3">
-          <div className="space-y-1.5">
-            <Label>Título</Label>
-            <Input
-              value={v.titulo}
-              onChange={(e) => set("titulo", e.target.value)}
-              placeholder="ex.: Reunião com o time"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={alternarAniversario}
-            className={cn(
-              "flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition",
-              v.aniversario
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-input text-foreground",
-            )}
-          >
-            🎂 Aniversário
-          </button>
-
-          {!v.aniversario && (
-            <div className="grid grid-cols-2 gap-2">
-              {(
-                [
-                  [false, "Com horário"],
-                  [true, "Dia inteiro"],
-                ] as [boolean, string][]
-              ).map(([val, label]) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => set("diaInteiro", val)}
-                  className={cn(
-                    "rounded-md border px-3 py-2 text-sm font-medium transition",
-                    v.diaInteiro === val
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-input text-foreground",
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-2">
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="flex flex-col gap-3">
             <div className="space-y-1.5">
-              <Label>{diaInteiroEfetivo ? "De" : "Data"}</Label>
-              <Input type="date" value={v.data} onChange={(e) => set("data", e.target.value)} />
+              <Label>Título</Label>
+              <Input
+                value={v.titulo}
+                onChange={(e) => set("titulo", e.target.value)}
+                placeholder="ex.: Reunião com o time"
+              />
             </div>
-            {diaInteiroEfetivo && !v.aniversario && (
-              <div className="space-y-1.5">
-                <Label>Até (opcional)</Label>
-                <Input
-                  type="date"
-                  value={v.dataFim}
-                  min={v.data}
-                  onChange={(e) => set("dataFim", e.target.value)}
-                />
-              </div>
-            )}
-          </div>
 
-          {!diaInteiroEfetivo && (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1.5">
-                <Label>Início</Label>
-                <Input
-                  type="time"
-                  value={v.horaInicio}
-                  onChange={(e) => set("horaInicio", e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Fim (opcional)</Label>
-                <Input
-                  type="time"
-                  value={v.horaFim}
-                  onChange={(e) => set("horaFim", e.target.value)}
-                />
-              </div>
-            </div>
-          )}
+            <button
+              type="button"
+              onClick={alternarAniversario}
+              className={cn(
+                "flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition",
+                v.aniversario
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-input text-foreground",
+              )}
+            >
+              🎂 Aniversário
+            </button>
 
-          <div className="space-y-1.5">
-            <Label>Local (opcional)</Label>
-            <Input
-              value={v.local}
-              onChange={(e) => set("local", e.target.value)}
-              placeholder="ex.: Escritório"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Descrição (opcional)</Label>
-            <Textarea
-              value={v.descricao}
-              onChange={(e) => set("descricao", e.target.value)}
-              className="min-h-[70px]"
-            />
-          </div>
-
-          {!v.aniversario && (
-            <div className="space-y-1.5">
-              <Label>Cor</Label>
-              <div className="flex flex-wrap gap-2">
-                {CORES_EVENTO_ORDEM.map((c) => (
+            {!v.aniversario && (
+              <div className="grid grid-cols-2 gap-2">
+                {(
+                  [
+                    [false, "Com horário"],
+                    [true, "Dia inteiro"],
+                  ] as [boolean, string][]
+                ).map(([val, label]) => (
                   <button
-                    key={c}
+                    key={label}
                     type="button"
-                    onClick={() => set("cor", c)}
-                    aria-label={CORES_EVENTO[c].label}
-                    title={CORES_EVENTO[c].label}
+                    onClick={() => set("diaInteiro", val)}
                     className={cn(
-                      "size-7 rounded-full transition",
-                      CORES_EVENTO[c].dot,
-                      v.cor === c &&
-                        cn("ring-2 ring-offset-2 ring-offset-card", CORES_EVENTO[c].ring),
+                      "rounded-md border px-3 py-2 text-sm font-medium transition",
+                      v.diaInteiro === val
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-input text-foreground",
                     )}
-                  />
+                  >
+                    {label}
+                  </button>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {v.aniversario ? (
-            <p className="text-xs text-muted-foreground">
-              🎂 Repete todo ano, dia inteiro, na cor rosa — fica fácil de bater o olho no
-              calendário.
-            </p>
-          ) : (
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
-                <Label>Repetir</Label>
-                <Select
-                  value={v.recorrencia}
-                  onValueChange={(val) => set("recorrencia", val as Recorrencia)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {RECORRENCIAS.map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {RECORRENCIA_LABEL[r]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>{diaInteiroEfetivo ? "De" : "Data"}</Label>
+                <Input type="date" value={v.data} onChange={(e) => set("data", e.target.value)} />
               </div>
-              {v.recorrencia !== "nenhuma" && (
+              {diaInteiroEfetivo && !v.aniversario && (
                 <div className="space-y-1.5">
-                  <Label>Repetir até (opcional)</Label>
+                  <Label>Até (opcional)</Label>
                   <Input
                     type="date"
-                    value={v.recorrenciaFim}
+                    value={v.dataFim}
                     min={v.data}
-                    onChange={(e) => set("recorrenciaFim", e.target.value)}
+                    onChange={(e) => set("dataFim", e.target.value)}
                   />
                 </div>
               )}
             </div>
-          )}
 
-          <button
-            type="button"
-            onClick={() => set("destaque", !v.destaque)}
-            className={cn(
-              "flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition",
-              v.destaque
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-input text-foreground",
+            {!diaInteiroEfetivo && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <Label>Início</Label>
+                  <Input
+                    type="time"
+                    value={v.horaInicio}
+                    onChange={(e) => set("horaInicio", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Fim (opcional)</Label>
+                  <Input
+                    type="time"
+                    value={v.horaFim}
+                    onChange={(e) => set("horaFim", e.target.value)}
+                  />
+                </div>
+              </div>
             )}
-          >
-            🔝 Destacar (aparece primeiro na lista do dia)
-          </button>
 
-          <div className="space-y-1.5">
-            <Label>Lembrete</Label>
-            <Select
-              value={v.lembreteMinutos == null ? "none" : String(v.lembreteMinutos)}
-              onValueChange={(val) => set("lembreteMinutos", val === "none" ? null : Number(val))}
+            <div className="space-y-1.5">
+              <Label>Local (opcional)</Label>
+              <Input
+                value={v.local}
+                onChange={(e) => set("local", e.target.value)}
+                placeholder="ex.: Escritório"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Descrição (opcional)</Label>
+              <Textarea
+                value={v.descricao}
+                onChange={(e) => set("descricao", e.target.value)}
+                className="min-h-[70px]"
+              />
+            </div>
+
+            {!v.aniversario && (
+              <div className="space-y-1.5">
+                <Label>Cor</Label>
+                <div className="flex flex-wrap gap-2">
+                  {CORES_EVENTO_ORDEM.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => set("cor", c)}
+                      aria-label={CORES_EVENTO[c].label}
+                      title={CORES_EVENTO[c].label}
+                      className={cn(
+                        "size-7 rounded-full transition",
+                        CORES_EVENTO[c].dot,
+                        v.cor === c &&
+                          cn("ring-2 ring-offset-2 ring-offset-card", CORES_EVENTO[c].ring),
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {v.aniversario ? (
+              <p className="text-xs text-muted-foreground">
+                🎂 Repete todo ano, dia inteiro, na cor rosa — fica fácil de bater o olho no
+                calendário.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <Label>Repetir</Label>
+                  <Select
+                    value={v.recorrencia}
+                    onValueChange={(val) => set("recorrencia", val as Recorrencia)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RECORRENCIAS.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {RECORRENCIA_LABEL[r]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {v.recorrencia !== "nenhuma" && (
+                  <div className="space-y-1.5">
+                    <Label>Repetir até (opcional)</Label>
+                    <Input
+                      type="date"
+                      value={v.recorrenciaFim}
+                      min={v.data}
+                      onChange={(e) => set("recorrenciaFim", e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => set("destaque", !v.destaque)}
+              className={cn(
+                "flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition",
+                v.destaque
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-input text-foreground",
+              )}
             >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {LEMBRETE_OPCOES.map((o) => (
-                  <SelectItem key={o.label} value={o.valor == null ? "none" : String(o.valor)}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Por enquanto é só uma anotação — lembrete por notificação é o próximo passo.
-            </p>
-          </div>
+              🔝 Destacar (aparece primeiro na lista do dia)
+            </button>
 
-          <div className="mt-1 flex gap-2">
-            <Button onClick={salvar} disabled={salvando} className="flex-1">
-              {salvando ? "Salvando…" : "Salvar"}
-            </Button>
-            {evento && (
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={excluir}
-                disabled={remover.isPending}
-                aria-label="Excluir evento"
-                className="text-destructive hover:text-destructive"
+            <div className="space-y-1.5">
+              <Label>Lembrete</Label>
+              <Select
+                value={v.lembreteMinutos == null ? "none" : String(v.lembreteMinutos)}
+                onValueChange={(val) => set("lembreteMinutos", val === "none" ? null : Number(val))}
               >
-                <IconTrash className="size-4" />
-              </Button>
-            )}
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {LEMBRETE_OPCOES.map((o) => (
+                    <SelectItem key={o.label} value={o.valor == null ? "none" : String(o.valor)}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Por enquanto é só uma anotação — lembrete por notificação é o próximo passo.
+              </p>
+            </div>
           </div>
+        </div>
+
+        <div className="flex shrink-0 gap-2 border-t border-border px-6 py-4">
+          <Button onClick={salvar} disabled={salvando} className="flex-1">
+            {salvando ? "Salvando…" : "Salvar"}
+          </Button>
+          {evento && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={excluir}
+              disabled={remover.isPending}
+              aria-label="Excluir evento"
+              className="text-destructive hover:text-destructive"
+            >
+              <IconTrash className="size-4" />
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
