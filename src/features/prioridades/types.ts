@@ -4,7 +4,7 @@ export type Prioridade = Database["public"]["Tables"]["prioridades"]["Row"];
 
 export type NovaPrioridade = Pick<
   Database["public"]["Tables"]["prioridades"]["Insert"],
-  "titulo" | "descricao" | "cor" | "concluida"
+  "titulo" | "descricao" | "cor" | "concluida" | "ordem"
 >;
 
 export type CorPrioridade = "vermelho" | "amarelo" | "verde";

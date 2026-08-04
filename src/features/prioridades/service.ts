@@ -24,3 +24,8 @@ export async function deletePrioridade(id: string) {
   const { error } = await supabase.from("prioridades").delete().eq("id", id);
   if (error) throw error;
 }
+
+export async function atualizarOrdemPrioridade(id: string, ordem: number) {
+  const { error } = await supabase.from("prioridades").update({ ordem }).eq("id", id);
+  if (error) throw error;
+}

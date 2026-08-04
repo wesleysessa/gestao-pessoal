@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { IconCalendarPlus, IconFlag, IconPencil, IconTrash } from "@tabler/icons-react";
+import { useMemo, useState } from "react";
+import {
+  IconCalendarPlus,
+  IconChevronDown,
+  IconChevronUp,
+  IconFlag,
+  IconPencil,
+  IconTrash,
+} from "@tabler/icons-react";
 import { toast } from "sonner";
 import { SectionHeader } from "@/components/ds";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { cn } from "@/lib/utils";
 import { hoje } from "@/lib/data";
 import {
+  useAtualizarOrdemPrioridade,
   useCreatePrioridade,
   useDeletePrioridade,
   usePrioridades,
@@ -105,11 +113,124 @@ function DialogVirarCompromisso({
   );
 }
 
+function ItemCard({
+  p,
+  emEdicao,
+  podeSubir,
+  podeDescer,
+  onMoverCima,
+  onMoverBaixo,
+  onAlternarConcluida,
+  onVirarCompromisso,
+  onEditar,
+  onExcluir,
+}: {
+  p: Prioridade;
+  emEdicao: boolean;
+  podeSubir?: boolean;
+  podeDescer?: boolean;
+  onMoverCima?: () => void;
+  onMoverBaixo?: () => void;
+  onAlternarConcluida: () => void;
+  onVirarCompromisso: () => void;
+  onEditar: () => void;
+  onExcluir: () => void;
+}) {
+  const mostrarSetas = onMoverCima != null;
+  return (
+    <Card className={emEdicao ? "border-primary" : undefined}>
+      <CardContent className="flex items-start gap-2 p-3.5">
+        {mostrarSetas && (
+          <div className="flex shrink-0 flex-col">
+            <button
+              type="button"
+              onClick={onMoverCima}
+              disabled={!podeSubir}
+              aria-label="Mover pra cima"
+              title="Mover pra cima (prioridade maior)"
+              className="text-muted-foreground transition hover:text-primary disabled:opacity-20"
+            >
+              <IconChevronUp className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={onMoverBaixo}
+              disabled={!podeDescer}
+              aria-label="Mover pra baixo"
+              title="Mover pra baixo (prioridade menor)"
+              className="text-muted-foreground transition hover:text-primary disabled:opacity-20"
+            >
+              <IconChevronDown className="size-4" />
+            </button>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={onAlternarConcluida}
+          aria-label={p.concluida ? "Reabrir" : "Concluir"}
+          className={cn(
+            "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition",
+            p.concluida ? "border-primary bg-primary" : "border-input",
+          )}
+        >
+          {p.concluida && <span className="text-[10px] text-primary-foreground">✓</span>}
+        </button>
+        <span
+          className={cn(
+            "mt-1.5 size-2.5 shrink-0 rounded-full",
+            CORES_PRIORIDADE[p.cor as CorPrioridade].dot,
+          )}
+        />
+        <div className="min-w-0 flex-1">
+          <div
+            className={cn(
+              "truncate text-sm font-semibold text-foreground",
+              p.concluida && "text-muted-foreground line-through",
+            )}
+          >
+            {p.titulo}
+          </div>
+          {p.descricao && (
+            <p className="mt-0.5 whitespace-pre-wrap text-xs text-muted-foreground">
+              {p.descricao}
+            </p>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={onVirarCompromisso}
+            aria-label="Virar compromisso"
+            title="Virar compromisso na Agenda"
+            className="text-muted-foreground transition hover:text-primary"
+          >
+            <IconCalendarPlus className="size-4" />
+          </button>
+          <button
+            onClick={onEditar}
+            aria-label="Editar"
+            className="text-muted-foreground transition hover:text-primary"
+          >
+            <IconPencil className="size-4" />
+          </button>
+          <button
+            onClick={onExcluir}
+            aria-label="Excluir"
+            className="text-muted-foreground transition hover:text-destructive"
+          >
+            <IconTrash className="size-4" />
+          </button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function Prioridades() {
   const { data: itens = [], isLoading } = usePrioridades();
   const criar = useCreatePrioridade();
   const atualizar = useUpdatePrioridade();
   const remover = useDeletePrioridade();
+  const atualizarOrdem = useAtualizarOrdemPrioridade();
 
   const [editando, setEditando] = useState<Prioridade | null>(null);
   const [titulo, setTitulo] = useState("");
@@ -142,6 +263,8 @@ function Prioridades() {
       descricao: descricao.trim() || null,
       cor,
       concluida: editando?.concluida ?? false,
+      // item novo entra no fim do grupo da cor escolhida
+      ordem: editando ? editando.ordem : itens.filter((i) => i.cor === cor).length,
     };
     if (editando) {
       atualizar.mutate(
@@ -178,11 +301,26 @@ function Prioridades() {
 
   const salvando = criar.isPending || atualizar.isPending;
 
-  const ordem: Record<CorPrioridade, number> = { vermelho: 0, amarelo: 1, verde: 2 };
-  const visiveis = [...itens].sort((a, b) => {
-    if (a.concluida !== b.concluida) return a.concluida ? 1 : -1;
-    return ordem[a.cor as CorPrioridade] - ordem[b.cor as CorPrioridade];
-  });
+  /** Itens não concluídos de uma cor, na ordem manual — é o que "mover" reorganiza. */
+  const grupoDaCor = (c: CorPrioridade) =>
+    itens.filter((i) => !i.concluida && i.cor === c).sort((a, b) => a.ordem - b.ordem);
+
+  const concluidos = useMemo(
+    () => [...itens].filter((i) => i.concluida).sort((a, b) => a.ordem - b.ordem),
+    [itens],
+  );
+
+  function mover(p: Prioridade, direcao: "cima" | "baixo") {
+    const grupo = grupoDaCor(p.cor as CorPrioridade);
+    const idx = grupo.findIndex((i) => i.id === p.id);
+    const alvoIdx = direcao === "cima" ? idx - 1 : idx + 1;
+    if (idx < 0 || alvoIdx < 0 || alvoIdx >= grupo.length) return;
+    const reordenado = [...grupo];
+    [reordenado[idx], reordenado[alvoIdx]] = [reordenado[alvoIdx], reordenado[idx]];
+    reordenado.forEach((item, i) => {
+      if (item.ordem !== i) atualizarOrdem.mutate({ id: item.id, ordem: i });
+    });
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
@@ -243,75 +381,59 @@ function Prioridades() {
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
-      ) : visiveis.length === 0 ? (
+      ) : itens.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-card border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
           <IconFlag className="size-8" stroke={1.5} />
           <p className="text-sm">Nada por aqui ainda. Registre o primeiro item acima.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          {visiveis.map((p) => (
-            <Card key={p.id} className={editando?.id === p.id ? "border-primary" : undefined}>
-              <CardContent className="flex items-start gap-3 p-3.5">
-                <button
-                  type="button"
-                  onClick={() => alternarConcluida(p)}
-                  aria-label={p.concluida ? "Reabrir" : "Concluir"}
-                  className={cn(
-                    "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition",
-                    p.concluida ? "border-primary bg-primary" : "border-input",
-                  )}
-                >
-                  {p.concluida && <span className="text-[10px] text-primary-foreground">✓</span>}
-                </button>
-                <span
-                  className={cn(
-                    "mt-1.5 size-2.5 shrink-0 rounded-full",
-                    CORES_PRIORIDADE[p.cor as CorPrioridade].dot,
-                  )}
+        <div className="flex flex-col gap-4">
+          {CORES_PRIORIDADE_ORDEM.map((c) => {
+            const grupo = grupoDaCor(c);
+            if (grupo.length === 0) return null;
+            return (
+              <div key={c} className="flex flex-col gap-2">
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span className={cn("size-2.5 rounded-full", CORES_PRIORIDADE[c].dot)} />
+                  {CORES_PRIORIDADE[c].label.split(" — ")[0]} · {grupo.length}
+                </div>
+                {grupo.map((p, i) => (
+                  <ItemCard
+                    key={p.id}
+                    p={p}
+                    emEdicao={editando?.id === p.id}
+                    podeSubir={i > 0}
+                    podeDescer={i < grupo.length - 1}
+                    onMoverCima={() => mover(p, "cima")}
+                    onMoverBaixo={() => mover(p, "baixo")}
+                    onAlternarConcluida={() => alternarConcluida(p)}
+                    onVirarCompromisso={() => setVirandoCompromisso(p)}
+                    onEditar={() => iniciarEdicao(p)}
+                    onExcluir={() => excluir(p.id)}
+                  />
+                ))}
+              </div>
+            );
+          })}
+
+          {concluidos.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Concluídos · {concluidos.length}
+              </div>
+              {concluidos.map((p) => (
+                <ItemCard
+                  key={p.id}
+                  p={p}
+                  emEdicao={editando?.id === p.id}
+                  onAlternarConcluida={() => alternarConcluida(p)}
+                  onVirarCompromisso={() => setVirandoCompromisso(p)}
+                  onEditar={() => iniciarEdicao(p)}
+                  onExcluir={() => excluir(p.id)}
                 />
-                <div className="min-w-0 flex-1">
-                  <div
-                    className={cn(
-                      "truncate text-sm font-semibold text-foreground",
-                      p.concluida && "text-muted-foreground line-through",
-                    )}
-                  >
-                    {p.titulo}
-                  </div>
-                  {p.descricao && (
-                    <p className="mt-0.5 whitespace-pre-wrap text-xs text-muted-foreground">
-                      {p.descricao}
-                    </p>
-                  )}
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <button
-                    onClick={() => setVirandoCompromisso(p)}
-                    aria-label="Virar compromisso"
-                    title="Virar compromisso na Agenda"
-                    className="text-muted-foreground transition hover:text-primary"
-                  >
-                    <IconCalendarPlus className="size-4" />
-                  </button>
-                  <button
-                    onClick={() => iniciarEdicao(p)}
-                    aria-label="Editar"
-                    className="text-muted-foreground transition hover:text-primary"
-                  >
-                    <IconPencil className="size-4" />
-                  </button>
-                  <button
-                    onClick={() => excluir(p.id)}
-                    aria-label="Excluir"
-                    className="text-muted-foreground transition hover:text-destructive"
-                  >
-                    <IconTrash className="size-4" />
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              ))}
+            </div>
+          )}
         </div>
       )}
 

@@ -15,6 +15,7 @@ export type Database = {
           descricao: string | null;
           cor: string;
           concluida: boolean;
+          ordem: number;
           created_at: string;
           updated_at: string;
         };
@@ -25,6 +26,7 @@ export type Database = {
           descricao?: string | null;
           cor?: string;
           concluida?: boolean;
+          ordem?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -35,6 +37,7 @@ export type Database = {
           descricao?: string | null;
           cor?: string;
           concluida?: boolean;
+          ordem?: number;
           created_at?: string;
           updated_at?: string;
         };

@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createPrioridade, deletePrioridade, listPrioridades, updatePrioridade } from "./service";
+import {
+  atualizarOrdemPrioridade,
+  createPrioridade,
+  deletePrioridade,
+  listPrioridades,
+  updatePrioridade,
+} from "./service";
 import type { NovaPrioridade } from "./types";
 
 const KEY = ["prioridades"];
@@ -29,6 +35,15 @@ export function useDeletePrioridade() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deletePrioridade(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+export function useAtualizarOrdemPrioridade() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ordem }: { id: string; ordem: number }) =>
+      atualizarOrdemPrioridade(id, ordem),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });
 }
