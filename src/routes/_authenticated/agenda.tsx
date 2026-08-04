@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   IconAlertTriangle,
@@ -884,15 +884,25 @@ function Agenda() {
     <div className="mx-auto max-w-2xl px-4 py-4">
       <div className="mb-1 flex items-start justify-between gap-2">
         <SectionHeader overline="Gestão Pessoal" title="Agenda" />
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-1 shrink-0 gap-1.5 text-xs"
-          onClick={() => setModo((m) => (m === "calendario" ? "quadro" : "calendario"))}
-        >
-          <IconLayoutGrid className="size-3.5" />
-          {modo === "calendario" ? "Quadro da Semana" : "Modo Calendário"}
-        </Button>
+        <div className="mt-1 flex shrink-0 items-center gap-1.5">
+          <Link
+            to="/prioridades"
+            aria-label="Lista de Prioridades"
+            title="Lista de Prioridades"
+            className="flex size-8 items-center justify-center rounded-md border border-input text-muted-foreground transition hover:bg-muted hover:text-primary"
+          >
+            <IconFlag className="size-4" />
+          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs"
+            onClick={() => setModo((m) => (m === "calendario" ? "quadro" : "calendario"))}
+          >
+            <IconLayoutGrid className="size-3.5" />
+            {modo === "calendario" ? "Quadro da Semana" : "Modo Calendário"}
+          </Button>
+        </div>
       </div>
 
       {modo === "calendario" && (

@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
+  IconCalendar,
   IconCalendarPlus,
   IconChevronDown,
   IconChevronUp,
@@ -324,7 +325,17 @@ function Prioridades() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
-      <SectionHeader overline="Gestão Pessoal" title="Lista de Prioridades" />
+      <div className="mb-1 flex items-start justify-between gap-2">
+        <SectionHeader overline="Gestão Pessoal" title="Lista de Prioridades" />
+        <Link
+          to="/agenda"
+          aria-label="Agenda"
+          title="Agenda"
+          className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-md border border-input text-muted-foreground transition hover:bg-muted hover:text-primary"
+        >
+          <IconCalendar className="size-4" />
+        </Link>
+      </div>
 
       <Card className="mb-5">
         <CardContent className="pt-6">
