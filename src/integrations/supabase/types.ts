@@ -7,6 +7,39 @@ export type Database = {
   };
   public: {
     Tables: {
+      prioridades: {
+        Row: {
+          id: string;
+          user_id: string;
+          titulo: string;
+          descricao: string | null;
+          cor: string;
+          concluida: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          titulo: string;
+          descricao?: string | null;
+          cor?: string;
+          concluida?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          titulo?: string;
+          descricao?: string | null;
+          cor?: string;
+          concluida?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       agenda_conclusoes: {
         Row: {
           id: string;

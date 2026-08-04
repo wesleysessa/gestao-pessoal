@@ -9,6 +9,7 @@ import {
   IconCircleCheck,
   IconClock,
   IconDotsVertical,
+  IconFlag,
   IconLayoutGrid,
   IconMapPin,
   IconTrash,
@@ -58,6 +59,7 @@ import {
   type Ocorrencia,
   type Recorrencia,
 } from "@/features/agenda/types";
+import { useCreatePrioridade } from "@/features/prioridades/hooks";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
   component: Agenda,
@@ -174,6 +176,7 @@ function EventoDialog({
   const criar = useCreateEvento();
   const atualizar = useUpdateEvento();
   const remover = useDeleteEvento();
+  const criarPrioridade = useCreatePrioridade();
   const [v, setV] = useState<FormValues>(() => valoresVazios(dataPadrao));
 
   useEffect(() => {
@@ -239,6 +242,27 @@ function EventoDialog({
       onSuccess: () => onOpenChange(false),
       onError: (e: Error) => toast.error(e.message),
     });
+  }
+
+  /** Tira da Agenda e joga pra Lista de Prioridades (sem data). */
+  function virarPrioridade() {
+    if (!evento) return;
+    criarPrioridade.mutate(
+      {
+        titulo: evento.titulo,
+        descricao: evento.descricao,
+        cor: "amarelo",
+        concluida: false,
+      },
+      {
+        onSuccess: () => {
+          remover.mutate(evento.id, { onError: (e: Error) => toast.error(e.message) });
+          toast.success("Virou item da Lista de Prioridades");
+          onOpenChange(false);
+        },
+        onError: (e: Error) => toast.error(e.message),
+      },
+    );
   }
 
   return (
@@ -470,6 +494,20 @@ function EventoDialog({
           <Button onClick={salvar} disabled={salvando} className="flex-1">
             {salvando ? "Salvando…" : "Salvar"}
           </Button>
+          {evento && !evento.aniversario && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={virarPrioridade}
+              disabled={criarPrioridade.isPending || remover.isPending}
+              aria-label="Virar item da Lista de Prioridades"
+              title="Tirar da Agenda e virar item da Lista de Prioridades (sem data)"
+              className="text-muted-foreground hover:text-primary"
+            >
+              <IconFlag className="size-4" />
+            </Button>
+          )}
           {evento && (
             <Button
               type="button"

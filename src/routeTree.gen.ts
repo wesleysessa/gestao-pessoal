@@ -18,6 +18,7 @@ import { Route as AuthenticatedCadastrosRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDiarioRouteImport } from './routes/_authenticated/diario'
 import { Route as AuthenticatedLivrosRouteImport } from './routes/_authenticated/livros'
 import { Route as AuthenticatedMelhoriasRouteImport } from './routes/_authenticated/melhorias'
+import { Route as AuthenticatedPrioridadesRouteImport } from './routes/_authenticated/prioridades'
 import { Route as AuthenticatedRotinasRouteImport } from './routes/_authenticated/rotinas'
 import { Route as AuthenticatedSaudeRouteImport } from './routes/_authenticated/saude'
 import { Route as AuthenticatedVocabularioRouteImport } from './routes/_authenticated/vocabulario'
@@ -66,6 +67,12 @@ const AuthenticatedMelhoriasRoute = AuthenticatedMelhoriasRouteImport.update({
   path: '/melhorias',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPrioridadesRoute =
+  AuthenticatedPrioridadesRouteImport.update({
+    id: '/prioridades',
+    path: '/prioridades',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRotinasRoute = AuthenticatedRotinasRouteImport.update({
   id: '/rotinas',
   path: '/rotinas',
@@ -92,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/diario': typeof AuthenticatedDiarioRoute
   '/livros': typeof AuthenticatedLivrosRoute
   '/melhorias': typeof AuthenticatedMelhoriasRoute
+  '/prioridades': typeof AuthenticatedPrioridadesRoute
   '/rotinas': typeof AuthenticatedRotinasRoute
   '/saude': typeof AuthenticatedSaudeRoute
   '/vocabulario': typeof AuthenticatedVocabularioRoute
@@ -104,6 +112,7 @@ export interface FileRoutesByTo {
   '/diario': typeof AuthenticatedDiarioRoute
   '/livros': typeof AuthenticatedLivrosRoute
   '/melhorias': typeof AuthenticatedMelhoriasRoute
+  '/prioridades': typeof AuthenticatedPrioridadesRoute
   '/rotinas': typeof AuthenticatedRotinasRoute
   '/saude': typeof AuthenticatedSaudeRoute
   '/vocabulario': typeof AuthenticatedVocabularioRoute
@@ -119,6 +128,7 @@ export interface FileRoutesById {
   '/_authenticated/diario': typeof AuthenticatedDiarioRoute
   '/_authenticated/livros': typeof AuthenticatedLivrosRoute
   '/_authenticated/melhorias': typeof AuthenticatedMelhoriasRoute
+  '/_authenticated/prioridades': typeof AuthenticatedPrioridadesRoute
   '/_authenticated/rotinas': typeof AuthenticatedRotinasRoute
   '/_authenticated/saude': typeof AuthenticatedSaudeRoute
   '/_authenticated/vocabulario': typeof AuthenticatedVocabularioRoute
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
     | '/diario'
     | '/livros'
     | '/melhorias'
+    | '/prioridades'
     | '/rotinas'
     | '/saude'
     | '/vocabulario'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
     | '/diario'
     | '/livros'
     | '/melhorias'
+    | '/prioridades'
     | '/rotinas'
     | '/saude'
     | '/vocabulario'
@@ -161,6 +173,7 @@ export interface FileRouteTypes {
     | '/_authenticated/diario'
     | '/_authenticated/livros'
     | '/_authenticated/melhorias'
+    | '/_authenticated/prioridades'
     | '/_authenticated/rotinas'
     | '/_authenticated/saude'
     | '/_authenticated/vocabulario'
@@ -237,6 +250,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMelhoriasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/prioridades': {
+      id: '/_authenticated/prioridades'
+      path: '/prioridades'
+      fullPath: '/prioridades'
+      preLoaderRoute: typeof AuthenticatedPrioridadesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/rotinas': {
       id: '/_authenticated/rotinas'
       path: '/rotinas'
@@ -268,6 +288,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDiarioRoute: typeof AuthenticatedDiarioRoute
   AuthenticatedLivrosRoute: typeof AuthenticatedLivrosRoute
   AuthenticatedMelhoriasRoute: typeof AuthenticatedMelhoriasRoute
+  AuthenticatedPrioridadesRoute: typeof AuthenticatedPrioridadesRoute
   AuthenticatedRotinasRoute: typeof AuthenticatedRotinasRoute
   AuthenticatedSaudeRoute: typeof AuthenticatedSaudeRoute
   AuthenticatedVocabularioRoute: typeof AuthenticatedVocabularioRoute
@@ -281,6 +302,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDiarioRoute: AuthenticatedDiarioRoute,
   AuthenticatedLivrosRoute: AuthenticatedLivrosRoute,
   AuthenticatedMelhoriasRoute: AuthenticatedMelhoriasRoute,
+  AuthenticatedPrioridadesRoute: AuthenticatedPrioridadesRoute,
   AuthenticatedRotinasRoute: AuthenticatedRotinasRoute,
   AuthenticatedSaudeRoute: AuthenticatedSaudeRoute,
   AuthenticatedVocabularioRoute: AuthenticatedVocabularioRoute,
