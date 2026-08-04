@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   IconAlertTriangle,
   IconCalendarEvent,
@@ -750,11 +750,22 @@ function Agenda() {
     [eventos, weekStart],
   );
 
-  const ordenarOcorrencias = (a: Ocorrencia, b: Ocorrencia) => {
-    if (a.evento.destaque !== b.evento.destaque) return a.evento.destaque ? -1 : 1;
-    if (a.evento.dia_inteiro !== b.evento.dia_inteiro) return a.evento.dia_inteiro ? -1 : 1;
-    return (a.evento.hora_inicio ?? "").localeCompare(b.evento.hora_inicio ?? "");
-  };
+  // Concluído vai pro topo (entre concluídos, por horário); os demais seguem
+  // destaque → dia inteiro → horário, como antes.
+  const ordenarOcorrencias = useCallback(
+    (a: Ocorrencia, b: Ocorrencia) => {
+      const aConcluido = conclusaoPorChave.has(chaveOcorrencia(a.evento.id, a.dataOcorrencia));
+      const bConcluido = conclusaoPorChave.has(chaveOcorrencia(b.evento.id, b.dataOcorrencia));
+      if (aConcluido !== bConcluido) return aConcluido ? -1 : 1;
+      if (aConcluido && bConcluido) {
+        return (a.evento.hora_inicio ?? "").localeCompare(b.evento.hora_inicio ?? "");
+      }
+      if (a.evento.destaque !== b.evento.destaque) return a.evento.destaque ? -1 : 1;
+      if (a.evento.dia_inteiro !== b.evento.dia_inteiro) return a.evento.dia_inteiro ? -1 : 1;
+      return (a.evento.hora_inicio ?? "").localeCompare(b.evento.hora_inicio ?? "");
+    },
+    [conclusaoPorChave],
+  );
 
   // Radar já aparece no grupo fixo — não duplica nas colunas do dia.
   const ocorrenciasPorDiaQuadro = useMemo(() => {
@@ -767,7 +778,7 @@ function Agenda() {
     }
     for (const arr of map.values()) arr.sort(ordenarOcorrencias);
     return map;
-  }, [ocorrenciasDaSemana]);
+  }, [ocorrenciasDaSemana, ordenarOcorrencias]);
 
   const radarDaSemana = useMemo(
     () =>
@@ -805,7 +816,7 @@ function Agenda() {
       expandirOcorrencias(eventos, diaSelecionado, diaSelecionado)
         .filter((o) => !o.evento.radar)
         .sort(ordenarOcorrencias),
-    [eventos, diaSelecionado],
+    [eventos, diaSelecionado, ordenarOcorrencias],
   );
 
   /** Eventos passados (últimos 60 dias) sem conclusão — candidatos a reagendar. Aniversário não entra. */
