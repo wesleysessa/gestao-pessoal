@@ -350,6 +350,7 @@ export type Database = {
           comentario: string | null;
           data: string;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
@@ -360,6 +361,7 @@ export type Database = {
           comentario?: string | null;
           data?: string;
           created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -370,6 +372,7 @@ export type Database = {
           comentario?: string | null;
           data?: string;
           created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };

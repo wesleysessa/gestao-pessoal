@@ -9,14 +9,14 @@ import { useCheckins } from "@/features/saude/hooks";
 import { useAgua, useMetasAgua } from "@/features/agua/hooks";
 import { metaVigenteEm } from "@/features/agua/service";
 
-const META_DIARIA = 4;
+const META_DIARIA = 3;
 
 export function useStreak() {
   return useQuery({ queryKey: ["streak"], queryFn: syncStreak, staleTime: 5 * 60 * 1000 });
 }
 
 /**
- * Combina o estado gravado da streak com as 4 fontes de tarefa pra saber o
+ * Combina o estado gravado da streak com as 5 fontes de tarefa pra saber o
  * que já foi feito hoje (a função no banco só fecha a conta de dias
  * passados) e pra poder marcar qualquer dia do calendário como "cumprido".
  */
@@ -62,7 +62,8 @@ export function useStreakResumo() {
     },
     {
       rotulo: "Livros",
-      feita: livros.some((l) => l.data === hoje()),
+      // conta tanto um livro novo quanto editar algo num já cadastrado.
+      feita: livros.some((l) => l.data === hoje() || dataLocalDe(l.updated_at) === hoje()),
       to: "/livros",
       acao: "Registrar",
     },
@@ -86,13 +87,13 @@ export function useStreakResumo() {
   const metaBatidaHoje = feitasHoje >= META_DIARIA;
   const streakExibido = (streak?.streak_atual ?? 0) + (metaBatidaHoje ? 1 : 0);
 
-  /** Um dia "cumpriu a meta" se ao menos 4 das 5 tarefas têm registro nele. */
+  /** Um dia "cumpriu a meta" se ao menos 3 das 5 tarefas têm registro nele. */
   const diaCumpriuMeta = useMemo(() => {
     return (dataISO: string) => {
       let n = 0;
       if (vocab.some((v) => v.data === dataISO)) n++;
       if (diario.some((e) => e.data === dataISO)) n++;
-      if (livros.some((l) => l.data === dataISO)) n++;
+      if (livros.some((l) => l.data === dataISO || dataLocalDe(l.updated_at) === dataISO)) n++;
       if (metaAguaBatidaEm(dataISO)) n++;
       if (checkins.some((c) => c.data === dataISO)) n++;
       return n >= META_DIARIA;
