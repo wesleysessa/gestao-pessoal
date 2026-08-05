@@ -9,6 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { Card } from "@/components/ui/card";
 import { FraseDoDia } from "@/components/frase-do-dia";
+import { AprendizadoDoDia } from "@/components/aprendizado-do-dia";
 import type { AppIcon } from "@/components/app-icon";
 import { useStreakResumo } from "@/features/streak/hooks";
 
@@ -83,6 +84,7 @@ function Home() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
       <FraseDoDia />
+      <AprendizadoDoDia />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {MODULOS.map((m) => {

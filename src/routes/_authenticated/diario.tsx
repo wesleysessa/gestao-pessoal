@@ -333,7 +333,7 @@ function Diario() {
             <Input
               value={aprendizado}
               onChange={(e) => setAprendizado(e.target.value)}
-              placeholder="O que aprendeu de novo hoje? (opcional — ganha uma estrela)"
+              placeholder="Aprendizado ou curiosidade de hoje (opcional — ganha uma estrela)"
             />
           </div>
           <div className="mb-3 space-y-1.5">
