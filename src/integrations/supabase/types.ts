@@ -484,7 +484,7 @@ export type Database = {
     };
     Functions: {
       sync_streak: {
-        Args: Record<PropertyKey, never>;
+        Args: { fuso?: string };
         Returns: {
           id: string;
           user_id: string;
