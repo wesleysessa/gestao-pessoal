@@ -14,3 +14,5 @@ export type NovoVocabulario = Pick<
   Database["public"]["Tables"]["vocabulario"]["Insert"],
   "termo" | "idioma" | "traducao" | "exemplo" | "classe_gramatical" | "antonimo"
 >;
+
+export type FotoVocabulario = Database["public"]["Tables"]["vocabulario_fotos"]["Row"];

@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { IconLanguage, IconPencil, IconTrash } from "@tabler/icons-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  IconCamera,
+  IconLanguage,
+  IconPencil,
+  IconPhoto,
+  IconTrash,
+  IconX,
+} from "@tabler/icons-react";
 import { toast } from "sonner";
 import { SectionHeader } from "@/components/ds";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,16 +22,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { fmtData } from "@/lib/data";
+import { useSignedUrl } from "@/lib/use-signed-url";
+import { useCurrentProfile } from "@/features/auth/use-current-profile";
 import {
   useCreateVocabulario,
+  useDeleteFotoVocabulario,
   useDeleteVocabulario,
+  useFotosVocabulario,
   useUpdateVocabulario,
+  useUploadFotoVocabulario,
   useVocabulario,
 } from "@/features/vocabulario/hooks";
+import { FOTOS_BUCKET } from "@/features/vocabulario/service";
 import {
   CLASSE_GRAMATICAL_LABEL,
   type ClasseGramatical,
+  type FotoVocabulario,
   type Vocabulario as VocabularioItem,
 } from "@/features/vocabulario/types";
 
@@ -34,11 +49,140 @@ export const Route = createFileRoute("/_authenticated/vocabulario")({
 
 const CLASSES_GRAMATICAIS: ClasseGramatical[] = ["substantivo", "verbo", "adjetivo", "outro"];
 
+function FotoThumbInner({ path }: { path: string }) {
+  const { data: url } = useSignedUrl(FOTOS_BUCKET, path);
+  return url ? (
+    <img src={url} alt="" className="size-full object-cover" />
+  ) : (
+    <div className="size-full animate-pulse bg-muted" />
+  );
+}
+
+/** Miniatura que abre o arquivo original (sem corte) numa nova aba. */
+function FotoOriginalLink({ path, className }: { path: string; className?: string }) {
+  const { data: url } = useSignedUrl(FOTOS_BUCKET, path);
+  if (!url) return <div className={`animate-pulse bg-muted ${className ?? ""}`} />;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      title="Abrir foto original"
+      className={className}
+    >
+      <img src={url} alt="" className="size-full object-cover" />
+    </a>
+  );
+}
+
+/** Faixa de miniaturas do card — clique abre a galeria completa em dialog. */
+function FotosDoCard({ vocabularioId }: { vocabularioId: string }) {
+  const { data: fotos = [] } = useFotosVocabulario(vocabularioId);
+  const remover = useDeleteFotoVocabulario();
+  const [aberto, setAberto] = useState(false);
+
+  if (fotos.length === 0) return null;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setAberto(true);
+        }}
+        className="mt-2 flex items-center gap-1.5"
+      >
+        <div className="flex -space-x-2">
+          {fotos.slice(0, 4).map((f) => (
+            <div
+              key={f.id}
+              className="size-9 overflow-hidden rounded-md border-2 border-card bg-muted"
+            >
+              <FotoThumbInner path={f.storage_path} />
+            </div>
+          ))}
+        </div>
+        <span className="text-xs text-muted-foreground">
+          <IconPhoto className="inline size-3.5 align-text-bottom" /> {fotos.length}
+        </span>
+      </button>
+
+      <Dialog open={aberto} onOpenChange={setAberto}>
+        <DialogContent className="max-w-lg" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>Fotos</DialogTitle>
+          </DialogHeader>
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Toque numa foto para abrir o original
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {fotos.map((f) => (
+              <div
+                key={f.id}
+                className="group relative aspect-square overflow-hidden rounded-md bg-muted"
+              >
+                <FotoOriginalLink path={f.storage_path} className="block size-full" />
+                <button
+                  onClick={() =>
+                    remover.mutate(
+                      { id: f.id, storagePath: f.storage_path, vocabularioId },
+                      { onError: (e: Error) => toast.error(e.message) },
+                    )
+                  }
+                  aria-label="Excluir foto"
+                  className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                >
+                  <IconX className="size-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+/** Fotos já salvas de um item em edição — removíveis direto. */
+function FotosExistentes({ vocabularioId }: { vocabularioId: string }) {
+  const { data: fotos = [] } = useFotosVocabulario(vocabularioId);
+  const remover = useDeleteFotoVocabulario();
+
+  if (fotos.length === 0) return null;
+
+  return (
+    <div className="mb-3 flex flex-wrap gap-2">
+      {fotos.map((f: FotoVocabulario) => (
+        <div key={f.id} className="group relative size-16 overflow-hidden rounded-md bg-muted">
+          <FotoOriginalLink path={f.storage_path} className="block size-full" />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              remover.mutate(
+                { id: f.id, storagePath: f.storage_path, vocabularioId },
+                { onError: (err: Error) => toast.error(err.message) },
+              );
+            }}
+            aria-label="Excluir foto"
+            className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+          >
+            <IconX className="size-3" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Vocabulario() {
   const { data: itens = [], isLoading } = useVocabulario();
+  const { data: profile } = useCurrentProfile();
   const criar = useCreateVocabulario();
   const atualizar = useUpdateVocabulario();
   const remover = useDeleteVocabulario();
+  const enviarFoto = useUploadFotoVocabulario();
 
   const [editando, setEditando] = useState<VocabularioItem | null>(null);
   const [termo, setTermo] = useState("");
@@ -50,11 +194,16 @@ function Vocabulario() {
   const [filtro, setFiltro] = useState("todos");
   const [revisao, setRevisao] = useState(false);
   const [revelados, setRevelados] = useState<Record<string, boolean>>({});
+  const [novasFotos, setNovasFotos] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const previews = useMemo(() => novasFotos.map((f) => URL.createObjectURL(f)), [novasFotos]);
+  useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
 
   const idiomas = useMemo(() => [...new Set(itens.map((i) => i.idioma))], [itens]);
   const visiveis = filtro === "todos" ? itens : itens.filter((i) => i.idioma === filtro);
 
-  const salvando = criar.isPending || atualizar.isPending;
+  const salvando = criar.isPending || atualizar.isPending || enviarFoto.isPending;
 
   function iniciarEdicao(i: VocabularioItem) {
     setEditando(i);
@@ -64,6 +213,7 @@ function Vocabulario() {
     setExemplo(i.exemplo ?? "");
     setClasseGramatical((i.classe_gramatical as ClasseGramatical) ?? "");
     setAntonimo(i.antonimo ?? "");
+    setNovasFotos([]);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -75,6 +225,18 @@ function Vocabulario() {
     setExemplo("");
     setClasseGramatical("");
     setAntonimo("");
+    setNovasFotos([]);
+  }
+
+  async function enviarFotosPendentes(vocabularioId: string) {
+    if (novasFotos.length === 0 || !profile) return;
+    for (const file of novasFotos) {
+      try {
+        await enviarFoto.mutateAsync({ vocabularioId, userId: profile.id, file });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Falha ao enviar foto");
+      }
+    }
   }
 
   function salvar() {
@@ -93,11 +255,20 @@ function Vocabulario() {
     if (editando) {
       atualizar.mutate(
         { id: editando.id, input },
-        { onSuccess: cancelarEdicao, onError: (e: Error) => toast.error(e.message) },
+        {
+          onSuccess: async () => {
+            await enviarFotosPendentes(editando.id);
+            cancelarEdicao();
+          },
+          onError: (e: Error) => toast.error(e.message),
+        },
       );
     } else {
       criar.mutate(input, {
-        onSuccess: cancelarEdicao,
+        onSuccess: async (novo) => {
+          await enviarFotosPendentes(novo.id);
+          cancelarEdicao();
+        },
         onError: (e: Error) => toast.error(e.message),
       });
     }
@@ -196,6 +367,51 @@ function Vocabulario() {
               placeholder="ex.: pure serendipity."
             />
           </div>
+
+          <div className="mb-3 space-y-1.5">
+            <Label>Fotos (opcional)</Label>
+            {editando && <FotosExistentes vocabularioId={editando.id} />}
+            {previews.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {previews.map((url, i) => (
+                  <div
+                    key={url}
+                    className="group relative size-16 overflow-hidden rounded-md bg-muted"
+                  >
+                    <img src={url} alt="" className="size-full object-cover" />
+                    <button
+                      onClick={() => setNovasFotos((fs) => fs.filter((_, idx) => idx !== i))}
+                      aria-label="Remover"
+                      className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+                    >
+                      <IconX className="size-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                const files = Array.from(e.target.files ?? []);
+                setNovasFotos((fs) => [...fs, ...files]);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <IconCamera className="size-4" /> Anexar fotos
+            </Button>
+          </div>
+
           <div className="flex gap-2">
             <Button onClick={salvar} disabled={salvando}>
               {salvando ? "Salvando…" : editando ? "Salvar alterações" : "Adicionar palavra"}
@@ -304,6 +520,7 @@ function Vocabulario() {
                 {i.exemplo && (!revisao || revelados[i.id]) && (
                   <div className="mt-1.5 text-xs italic text-muted-foreground">“{i.exemplo}”</div>
                 )}
+                <FotosDoCard vocabularioId={i.id} />
               </CardContent>
             </Card>
           ))}
