@@ -19,3 +19,9 @@ export async function upsertCheckinHoje(input: NovoCheckinSaude) {
     .upsert({ ...input, data: hoje() }, { onConflict: "user_id,data" });
   if (error) throw error;
 }
+
+/** Edita um check-in de um dia passado (o de hoje passa por upsertCheckinHoje). */
+export async function updateCheckin(id: string, input: NovoCheckinSaude) {
+  const { error } = await supabase.from("saude_checkins").update(input).eq("id", id);
+  if (error) throw error;
+}

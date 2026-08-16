@@ -38,3 +38,11 @@ export function segundaDaSemana(dataISO: string): string {
   dt.setDate(dt.getDate() - offset);
   return dataLocalDe(dt);
 }
+
+/** Domingo (início da semana) da semana que contém a data informada. */
+export function domingoDaSemana(dataISO: string): string {
+  const [a, m, d] = dataISO.split("-").map(Number);
+  const dt = new Date(a, m - 1, d);
+  dt.setDate(dt.getDate() - dt.getDay());
+  return dataLocalDe(dt);
+}

@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { dataLocalDe, fmtData, hoje, segundaDaSemana } from "@/lib/data";
-import { useCheckins, useUpsertCheckinHoje } from "@/features/saude/hooks";
+import { addDias, domingoDaSemana, fmtData, hoje, segundaDaSemana } from "@/lib/data";
+import { useCheckins, useUpdateCheckin, useUpsertCheckinHoje } from "@/features/saude/hooks";
+import type { CheckinSaude } from "@/features/saude/types";
 import {
   useCheckinsAcademia,
   useDesmarcarCheckinAcademia,
@@ -62,11 +63,13 @@ function Saude() {
 
   const checkinAcademiaHoje = checkinsAcademia.find((c) => c.data === hoje());
   const semanaAtual = useMemo(() => segundaDaSemana(hoje()), []);
+  // Academia conta domingo a domingo (diferente da semana seg-dom usada nas
+  // médias de energia/sono abaixo) — pedido explícito do usuário.
+  const semanaAcademia = useMemo(() => domingoDaSemana(hoje()), []);
   const checkinsNaSemana = useMemo(() => {
-    const [a, m, d] = semanaAtual.split("-").map(Number);
-    const domingo = dataLocalDe(new Date(a, m - 1, d + 6));
-    return checkinsAcademia.filter((c) => c.data >= semanaAtual && c.data <= domingo).length;
-  }, [checkinsAcademia, semanaAtual]);
+    const fimSemana = addDias(semanaAcademia, 6);
+    return checkinsAcademia.filter((c) => c.data >= semanaAcademia && c.data <= fimSemana).length;
+  }, [checkinsAcademia, semanaAcademia]);
 
   function alternarAcademia() {
     if (checkinAcademiaHoje) {
@@ -78,34 +81,60 @@ function Saude() {
     }
   }
 
+  const atualizar = useUpdateCheckin();
   const registroHoje = checkins.find((c) => c.data === hoje());
 
+  const [editando, setEditando] = useState<CheckinSaude | null>(null);
   const [humor, setHumor] = useState(0);
   const [energia, setEnergia] = useState(0);
   const [sono, setSono] = useState("");
   const [obs, setObs] = useState("");
 
+  // Sem edição manual, o formulário sempre reflete o check-in de hoje (se
+  // já existir); clicar num registro passado troca o "alvo" pra ele.
+  const alvo = editando ?? registroHoje ?? null;
+
   useEffect(() => {
-    if (!registroHoje) return;
-    setHumor(registroHoje.humor);
-    setEnergia(registroHoje.energia ?? 0);
-    setSono(registroHoje.sono != null ? String(registroHoje.sono) : "");
-    setObs(registroHoje.obs ?? "");
-    // roda só quando os dados carregam pela 1ª vez, não a cada digitação
+    if (!alvo) {
+      setHumor(0);
+      setEnergia(0);
+      setSono("");
+      setObs("");
+      return;
+    }
+    setHumor(alvo.humor);
+    setEnergia(alvo.energia ?? 0);
+    setSono(alvo.sono != null ? String(alvo.sono) : "");
+    setObs(alvo.obs ?? "");
+    // roda só quando o alvo muda, não a cada digitação
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registroHoje?.data]);
+  }, [editando, registroHoje?.data]);
+
+  function iniciarEdicao(c: CheckinSaude) {
+    setEditando(c);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelarEdicao() {
+    setEditando(null);
+  }
 
   function salvarCheckin() {
     if (!humor) return;
-    salvar.mutate(
-      {
-        humor,
-        energia: energia || null,
-        sono: sono === "" ? null : Number(sono),
-        obs: obs.trim() || null,
-      },
-      { onError: (e: Error) => toast.error(e.message) },
-    );
+    const input = {
+      humor,
+      energia: energia || null,
+      sono: sono === "" ? null : Number(sono),
+      obs: obs.trim() || null,
+    };
+    if (editando) {
+      atualizar.mutate(
+        { id: editando.id, input },
+        { onSuccess: cancelarEdicao, onError: (e: Error) => toast.error(e.message) },
+      );
+    } else {
+      salvar.mutate(input, { onError: (e: Error) => toast.error(e.message) });
+    }
   }
 
   const ultimos14 = useMemo(
@@ -133,29 +162,42 @@ function Saude() {
     <div className="mx-auto max-w-2xl px-4 py-4">
       <SectionHeader overline="Gestão Pessoal" title="Saúde" />
 
-      {(mediasSemana.mediaEnergia != null || mediasSemana.mediaSono != null) && (
-        <div className="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
-          {mediasSemana.mediaEnergia != null && (
-            <span>
-              <strong className="text-foreground">{mediasSemana.mediaEnergia.toFixed(1)}</strong>{" "}
-              energia média (semana)
-            </span>
-          )}
-          {mediasSemana.mediaSono != null && (
-            <span>
-              <strong className="text-foreground">{mediasSemana.mediaSono.toFixed(1)}h</strong> sono
-              médio (semana)
-            </span>
-          )}
-        </div>
-      )}
+      <div className="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+        {mediasSemana.mediaEnergia != null && (
+          <span>
+            <strong className="text-foreground">{mediasSemana.mediaEnergia.toFixed(1)}</strong>{" "}
+            energia média (semana)
+          </span>
+        )}
+        {mediasSemana.mediaSono != null && (
+          <span>
+            <strong className="text-foreground">{mediasSemana.mediaSono.toFixed(1)}h</strong> sono
+            médio (semana)
+          </span>
+        )}
+        <span>
+          <strong className="text-foreground">{checkinsNaSemana}</strong> vezes na academia (semana)
+        </span>
+      </div>
 
       <Card className="mb-5">
         <CardContent className="pt-6">
           <div className="mb-3.5 flex flex-wrap items-center gap-2 text-base font-semibold text-foreground">
-            Como estou me sentindo hoje?
-            {registroHoje && (
+            {editando
+              ? `Editando registro de ${fmtData(editando.data)}`
+              : "Como estou me sentindo hoje?"}
+            {!editando && registroHoje && (
               <span className="text-xs font-medium text-green-600">registrado — pode ajustar</span>
+            )}
+            {editando && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-auto h-auto py-1 text-xs"
+                onClick={cancelarEdicao}
+              >
+                Cancelar
+              </Button>
             )}
           </div>
           <div className="mb-3.5 space-y-1.5">
@@ -188,12 +230,17 @@ function Saude() {
               />
             </div>
           </div>
-          <Button onClick={salvarCheckin} disabled={!humor || salvar.isPending}>
-            {salvar.isPending
+          <Button
+            onClick={salvarCheckin}
+            disabled={!humor || salvar.isPending || atualizar.isPending}
+          >
+            {salvar.isPending || atualizar.isPending
               ? "Salvando…"
-              : registroHoje
-                ? "Atualizar check-in"
-                : "Salvar check-in"}
+              : editando
+                ? "Salvar edição"
+                : registroHoje
+                  ? "Atualizar check-in"
+                  : "Salvar check-in"}
           </Button>
         </CardContent>
       </Card>
@@ -247,7 +294,11 @@ function Saude() {
       ) : (
         <div className="flex flex-col gap-2">
           {checkins.slice(0, 10).map((c) => (
-            <Card key={c.data}>
+            <Card
+              key={c.data}
+              onClick={() => iniciarEdicao(c)}
+              className={cn("cursor-pointer transition", editando?.id === c.id && "border-primary")}
+            >
               <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-1 p-3.5 text-sm text-foreground">
                 <strong className="min-w-[84px]">{fmtData(c.data)}</strong>
                 <span>Humor: {HUMORES[c.humor - 1]}</span>
