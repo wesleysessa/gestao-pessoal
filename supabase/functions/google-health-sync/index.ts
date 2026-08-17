@@ -131,24 +131,32 @@ Deno.serve(async (req) => {
         method: "POST",
         body: JSON.stringify({
           range: {
+            // A API espera um CivilDateTime (objeto), não string nem
+            // {year,month,day} solto — confirmado testando direto na API.
             start: {
-              year: inicio.getFullYear(),
-              month: inicio.getMonth() + 1,
-              day: inicio.getDate(),
+              date: {
+                year: inicio.getFullYear(),
+                month: inicio.getMonth() + 1,
+                day: inicio.getDate(),
+              },
             },
             end: {
-              year: amanha.getFullYear(),
-              month: amanha.getMonth() + 1,
-              day: amanha.getDate(),
+              date: {
+                year: amanha.getFullYear(),
+                month: amanha.getMonth() + 1,
+                day: amanha.getDate(),
+              },
             },
           },
           windowSizeDays: 1,
         }),
       });
       for (const p of rollup.rollupDataPoints ?? []) {
-        const d = p.civilStartTime as PontoData | undefined;
+        const d = p.civilStartTime?.date as PontoData | undefined;
         if (!d) continue;
-        const total = p.steps?.count_sum ?? p.steps?.countSum ?? null;
+        // Vem como string ("countSum": "5127"), não número.
+        const totalRaw = p.steps?.countSum ?? p.steps?.count_sum ?? null;
+        const total = totalRaw != null ? Number(totalRaw) : null;
         if (total != null) passosPorDia.set(isoDePontoData(d), total);
       }
     } catch (e) {
@@ -156,9 +164,8 @@ Deno.serve(async (req) => {
     }
 
     // --- Frequência cardíaca de repouso ---
-    // Sem filtro por data na query (o nome exato do campo de filtro pra
-    // essa métrica diária não é 100% documentado) — filtra no código, lendo
-    // a data de qualquer formato que a API devolver.
+    // Sem filtro por data na query (não há endpoint de rollup pra essa
+    // métrica) — filtra no código a partir dos ~30 últimos pontos.
     const fcPorDia = new Map<string, number>();
     try {
       const lista = await chamarGoogleHealth(
@@ -166,8 +173,11 @@ Deno.serve(async (req) => {
       );
       for (const dp of lista.dataPoints ?? []) {
         const obj = dp.dailyRestingHeartRate ?? {};
-        const bpm = obj.bpm ?? obj.value ?? obj.beatsPerMinute ?? null;
-        const rawDate = obj.civilDate ?? obj.date ?? obj.day ?? null;
+        // "beatsPerMinute" vem como string (ex.: "69"), e a data como
+        // {year,month,day} em `date`.
+        const bpmRaw = obj.beatsPerMinute ?? obj.bpm ?? obj.value ?? null;
+        const bpm = bpmRaw != null ? Number(bpmRaw) : null;
+        const rawDate = obj.date ?? obj.civilDate ?? null;
         let iso: string | null = null;
         if (typeof rawDate === "string") iso = rawDate.slice(0, 10);
         else if (rawDate && typeof rawDate === "object" && "year" in rawDate) {
@@ -184,7 +194,9 @@ Deno.serve(async (req) => {
     // --- Sono ---
     const sonoPorDia = new Map<string, { minutos: number; fases: unknown }>();
     try {
-      const filtro = `sleep.interval.end_time >= "${inicio.toISOString()}" AND sleep.interval.end_time <= "${amanha.toISOString()}"`;
+      // Esse campo só aceita ">=" e "<" como comparadores (confirmado
+      // testando direto na API — "<=" retorna erro de validação).
+      const filtro = `sleep.interval.end_time >= "${inicio.toISOString()}" AND sleep.interval.end_time < "${amanha.toISOString()}"`;
       const lista = await chamarGoogleHealth(
         `users/me/dataTypes/sleep/dataPoints?filter=${encodeURIComponent(filtro)}&pageSize=100`,
       );
