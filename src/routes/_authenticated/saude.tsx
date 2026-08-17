@@ -10,6 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { SectionHeader } from "@/components/ds";
+import type { AppIcon } from "@/components/app-icon";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,6 +71,47 @@ function fmtMinutos(min: number): string {
   const h = Math.floor(min / 60);
   const m = min % 60;
   return m ? `${h}h${String(m).padStart(2, "0")}` : `${h}h`;
+}
+
+const TOM_TILE = {
+  teal: {
+    bg: "bg-teal-50 dark:bg-teal-950/40",
+    border: "border-teal-200 dark:border-teal-900",
+    accent: "text-teal-600 dark:text-teal-400",
+  },
+  rose: {
+    bg: "bg-rose-50 dark:bg-rose-950/40",
+    border: "border-rose-200 dark:border-rose-900",
+    accent: "text-rose-600 dark:text-rose-400",
+  },
+  violet: {
+    bg: "bg-violet-50 dark:bg-violet-950/40",
+    border: "border-violet-200 dark:border-violet-900",
+    accent: "text-violet-600 dark:text-violet-400",
+  },
+} as const;
+
+function TileMetrica({
+  icon: Icon,
+  valor,
+  rotulo,
+  tom,
+}: {
+  icon: AppIcon;
+  valor: string;
+  rotulo: string;
+  tom: keyof typeof TOM_TILE;
+}) {
+  const cores = TOM_TILE[tom];
+  return (
+    <div className={cn("flex flex-col gap-2 rounded-xl border p-3", cores.bg, cores.border)}>
+      <Icon className={cn("size-5", cores.accent)} stroke={2} />
+      <div>
+        <div className="text-lg font-bold leading-tight text-foreground">{valor}</div>
+        <div className="text-[11px] leading-tight text-muted-foreground">{rotulo}</div>
+      </div>
+    </div>
+  );
 }
 
 function GoogleHealthCard() {
@@ -137,28 +179,34 @@ function GoogleHealthCard() {
         )}
 
         {status?.conectado && hojeDados && (
-          <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
-            {hojeDados.passos != null && (
-              <span className="flex items-center gap-1">
-                <IconFootsteps className="size-3.5" />
-                <strong className="text-foreground">{hojeDados.passos}</strong> passos
-              </span>
-            )}
-            {hojeDados.frequencia_repouso != null && (
-              <span className="flex items-center gap-1">
-                <IconHeartbeat className="size-3.5" />
-                <strong className="text-foreground">{hojeDados.frequencia_repouso}</strong> bpm
-                (repouso)
-              </span>
-            )}
-            {hojeDados.sono_minutos != null && (
-              <span className="flex items-center gap-1">
-                <IconMoon className="size-3.5" />
-                <strong className="text-foreground">{fmtMinutos(hojeDados.sono_minutos)}</strong> de
-                sono
-              </span>
-            )}
-            <span className="w-full text-[11px]">({fmtData(hojeDados.data)})</span>
+          <div>
+            <div className="grid grid-cols-3 gap-2">
+              {hojeDados.passos != null && (
+                <TileMetrica
+                  icon={IconFootsteps}
+                  valor={hojeDados.passos.toLocaleString("pt-BR")}
+                  rotulo="passos"
+                  tom="teal"
+                />
+              )}
+              {hojeDados.frequencia_repouso != null && (
+                <TileMetrica
+                  icon={IconHeartbeat}
+                  valor={`${hojeDados.frequencia_repouso} bpm`}
+                  rotulo="freq. de repouso"
+                  tom="rose"
+                />
+              )}
+              {hojeDados.sono_minutos != null && (
+                <TileMetrica
+                  icon={IconMoon}
+                  valor={fmtMinutos(hojeDados.sono_minutos)}
+                  rotulo="de sono"
+                  tom="violet"
+                />
+              )}
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">({fmtData(hojeDados.data)})</p>
           </div>
         )}
       </CardContent>
@@ -169,6 +217,7 @@ function GoogleHealthCard() {
 function Saude() {
   const { data: checkins = [], isLoading } = useCheckins();
   const salvar = useUpsertCheckinHoje();
+  const { data: dadosGoogleHealth = [] } = useDadosGoogleHealth();
 
   const { data: checkinsAcademia = [] } = useCheckinsAcademia();
   const marcarAcademia = useMarcarCheckinAcademiaHoje();
@@ -200,7 +249,6 @@ function Saude() {
   const [editando, setEditando] = useState<CheckinSaude | null>(null);
   const [humor, setHumor] = useState(0);
   const [energia, setEnergia] = useState(0);
-  const [sono, setSono] = useState("");
   const [obs, setObs] = useState("");
 
   // Sem edição manual, o formulário sempre reflete o check-in de hoje (se
@@ -211,13 +259,11 @@ function Saude() {
     if (!alvo) {
       setHumor(0);
       setEnergia(0);
-      setSono("");
       setObs("");
       return;
     }
     setHumor(alvo.humor);
     setEnergia(alvo.energia ?? 0);
-    setSono(alvo.sono != null ? String(alvo.sono) : "");
     setObs(alvo.obs ?? "");
     // roda só quando o alvo muda, não a cada digitação
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -237,7 +283,9 @@ function Saude() {
     const input = {
       humor,
       energia: energia || null,
-      sono: sono === "" ? null : Number(sono),
+      // Sono não é mais preenchido manualmente (vem do Google Health) — ao
+      // editar um registro antigo, preserva o valor manual que já existia.
+      sono: editando?.sono ?? null,
       obs: obs.trim() || null,
     };
     if (editando) {
@@ -263,13 +311,21 @@ function Saude() {
   const mediasSemana = useMemo(() => {
     const doSemana = checkins.filter((c) => c.data >= semanaAtual && c.data <= hoje());
     const energias = doSemana.filter((c) => c.energia != null).map((c) => c.energia as number);
-    const sonos = doSemana.filter((c) => c.sono != null).map((c) => c.sono as number);
     const mediaEnergia = energias.length
       ? energias.reduce((a, b) => a + b, 0) / energias.length
       : null;
-    const mediaSono = sonos.length ? sonos.reduce((a, b) => a + b, 0) / sonos.length : null;
+
+    // Sono agora vem do Google Health (sincronizado automaticamente), não
+    // mais de um campo manual do check-in.
+    const sonosMinutos = dadosGoogleHealth
+      .filter((d) => d.data >= semanaAtual && d.data <= hoje() && d.sono_minutos != null)
+      .map((d) => d.sono_minutos as number);
+    const mediaSono = sonosMinutos.length
+      ? sonosMinutos.reduce((a, b) => a + b, 0) / sonosMinutos.length / 60
+      : null;
+
     return { mediaEnergia, mediaSono };
-  }, [checkins, semanaAtual]);
+  }, [checkins, semanaAtual, dadosGoogleHealth]);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
@@ -292,6 +348,8 @@ function Saude() {
           <strong className="text-foreground">{checkinsNaSemana}</strong> vezes na academia (semana)
         </span>
       </div>
+
+      <GoogleHealthCard />
 
       <Card className="mb-5">
         <CardContent className="pt-6">
@@ -321,27 +379,13 @@ function Saude() {
             <Label>Energia (1 = esgotado · 5 = a mil)</Label>
             <Escala valor={energia} onEscolher={setEnergia} />
           </div>
-          <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
-            <div className="mb-3 space-y-1.5">
-              <Label>Horas de sono</Label>
-              <Input
-                type="number"
-                min={0}
-                max={24}
-                step={0.5}
-                value={sono}
-                onChange={(e) => setSono(e.target.value)}
-                placeholder="ex.: 7.5"
-              />
-            </div>
-            <div className="mb-3 space-y-1.5">
-              <Label>Observação (opcional)</Label>
-              <Input
-                value={obs}
-                onChange={(e) => setObs(e.target.value)}
-                placeholder="ex.: caminhei 40 min"
-              />
-            </div>
+          <div className="mb-3 space-y-1.5">
+            <Label>Observação (opcional)</Label>
+            <Input
+              value={obs}
+              onChange={(e) => setObs(e.target.value)}
+              placeholder="ex.: caminhei 40 min"
+            />
           </div>
           <Button
             onClick={salvarCheckin}
@@ -371,8 +415,6 @@ function Saude() {
           <span className="text-xs text-muted-foreground">({checkinsNaSemana}/7)</span>
         </CardContent>
       </Card>
-
-      <GoogleHealthCard />
 
       {ultimos14.length > 1 && (
         <Card className="mb-5">
