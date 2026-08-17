@@ -43,6 +43,96 @@ export type Database = {
         };
         Relationships: [];
       };
+      google_health_tokens: {
+        Row: {
+          user_id: string;
+          access_token: string;
+          refresh_token: string;
+          expira_em: string;
+          escopo: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          access_token: string;
+          refresh_token: string;
+          expira_em: string;
+          escopo?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          access_token?: string;
+          refresh_token?: string;
+          expira_em?: string;
+          escopo?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      google_health_status: {
+        Row: {
+          user_id: string;
+          conectado: boolean;
+          expira_em: string | null;
+          ultima_sincronizacao: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          conectado?: boolean;
+          expira_em?: string | null;
+          ultima_sincronizacao?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          conectado?: boolean;
+          expira_em?: string | null;
+          ultima_sincronizacao?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      google_health_dados: {
+        Row: {
+          id: string;
+          user_id: string;
+          data: string;
+          passos: number | null;
+          frequencia_repouso: number | null;
+          sono_minutos: number | null;
+          sono_fases: Json | null;
+          bruto: Json | null;
+          sincronizado_em: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          data: string;
+          passos?: number | null;
+          frequencia_repouso?: number | null;
+          sono_minutos?: number | null;
+          sono_fases?: Json | null;
+          bruto?: Json | null;
+          sincronizado_em?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          data?: string;
+          passos?: number | null;
+          frequencia_repouso?: number | null;
+          sono_minutos?: number | null;
+          sono_fases?: Json | null;
+          bruto?: Json | null;
+          sincronizado_em?: string;
+        };
+        Relationships: [];
+      };
       agenda_conclusoes: {
         Row: {
           id: string;

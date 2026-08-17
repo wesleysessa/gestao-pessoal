@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
-import { IconBarbell, IconHeartbeat } from "@tabler/icons-react";
+import {
+  IconBarbell,
+  IconFootsteps,
+  IconHeartbeat,
+  IconMoon,
+  IconPlugConnected,
+  IconRefresh,
+} from "@tabler/icons-react";
 import { toast } from "sonner";
 import { SectionHeader } from "@/components/ds";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +23,12 @@ import {
   useDesmarcarCheckinAcademia,
   useMarcarCheckinAcademiaHoje,
 } from "@/features/academia/hooks";
+import {
+  useDadosGoogleHealth,
+  useSincronizarGoogleHealth,
+  useStatusGoogleHealth,
+} from "@/features/google-health/hooks";
+import { montarUrlAutorizacaoGoogleHealth } from "@/features/google-health/service";
 
 export const Route = createFileRoute("/_authenticated/saude")({
   component: Saude,
@@ -50,6 +63,106 @@ function Escala({
         </button>
       ))}
     </div>
+  );
+}
+
+function fmtMinutos(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m ? `${h}h${String(m).padStart(2, "0")}` : `${h}h`;
+}
+
+function GoogleHealthCard() {
+  const { data: status, isLoading } = useStatusGoogleHealth();
+  const { data: dados = [] } = useDadosGoogleHealth();
+  const sincronizar = useSincronizarGoogleHealth();
+  const hojeDados = dados.find((d) => d.data === hoje()) ?? dados[0];
+
+  function conectar() {
+    try {
+      window.location.href = montarUrlAutorizacaoGoogleHealth();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível iniciar a conexão.");
+    }
+  }
+
+  if (isLoading) return null;
+
+  return (
+    <Card className="mb-5">
+      <CardContent className="pt-6">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <IconPlugConnected className="size-4 text-muted-foreground" />
+          <span className="text-sm font-semibold text-foreground">Google Health</span>
+          {status?.conectado && (
+            <span className="text-xs font-medium text-green-600">conectado ✓</span>
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            {status?.conectado ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  sincronizar.mutate(undefined, { onError: (e: Error) => toast.error(e.message) })
+                }
+                disabled={sincronizar.isPending}
+              >
+                <IconRefresh className="size-3.5" />
+                {sincronizar.isPending ? "Sincronizando…" : "Sincronizar agora"}
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" onClick={conectar}>
+                {status ? "Reconectar" : "Conectar Google Health"}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {status?.conectado === false && status.ultima_sincronizacao && (
+          <p className="mb-2 text-xs text-muted-foreground">
+            Sua conexão expirou — reconecte pra continuar sincronizando.
+          </p>
+        )}
+
+        {status?.conectado && status.ultima_sincronizacao && (
+          <p className="mb-2 text-xs text-muted-foreground">
+            Última sincronização:{" "}
+            {new Date(status.ultima_sincronizacao).toLocaleString("pt-BR", {
+              day: "2-digit",
+              month: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
+        )}
+
+        {status?.conectado && hojeDados && (
+          <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+            {hojeDados.passos != null && (
+              <span className="flex items-center gap-1">
+                <IconFootsteps className="size-3.5" />
+                <strong className="text-foreground">{hojeDados.passos}</strong> passos
+              </span>
+            )}
+            {hojeDados.frequencia_repouso != null && (
+              <span className="flex items-center gap-1">
+                <IconHeartbeat className="size-3.5" />
+                <strong className="text-foreground">{hojeDados.frequencia_repouso}</strong> bpm
+                (repouso)
+              </span>
+            )}
+            {hojeDados.sono_minutos != null && (
+              <span className="flex items-center gap-1">
+                <IconMoon className="size-3.5" />
+                <strong className="text-foreground">{fmtMinutos(hojeDados.sono_minutos)}</strong> de
+                sono
+              </span>
+            )}
+            <span className="w-full text-[11px]">({fmtData(hojeDados.data)})</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -258,6 +371,8 @@ function Saude() {
           <span className="text-xs text-muted-foreground">({checkinsNaSemana}/7)</span>
         </CardContent>
       </Card>
+
+      <GoogleHealthCard />
 
       {ultimos14.length > 1 && (
         <Card className="mb-5">
