@@ -39,7 +39,7 @@ const drawerSections = [{ label: "Início", to: "/", icon: IconHome }, ...MENU_M
 
 /** Quais itens do menu ficam fixados no rodapé — escolha do usuário (📌 no menu). */
 const PINNED_KEY = "gp_bottom_nav";
-const PINNED_PADRAO = ["/", "/diario", "/agua", "/saude", "/melhorias"];
+const PINNED_PADRAO = ["/", "/diario", "/agua", "/melhorias"];
 const MAX_PINNED = 5;
 
 function carregarFixados(): string[] {
@@ -280,7 +280,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="flex shrink-0 items-center gap-1.5">
           <button
             type="button"
-            onClick={() => navigate({ to: "/saude" })}
+            onClick={() => navigate({ to: "/diario" })}
             aria-label="Academia hoje"
             title={foiAcademiaHoje ? "Foi à academia hoje" : "Ainda não foi à academia hoje"}
             className="flex shrink-0 items-center rounded-full bg-secondary px-2 py-1 transition hover:bg-muted"
@@ -296,7 +296,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {hidratacaoProgresso != null && (
             <button
               type="button"
-              onClick={() => navigate({ to: "/saude" })}
+              onClick={() => navigate({ to: "/agua" })}
               aria-label="Hidratação do dia"
               title="Hidratação do dia"
               className="flex shrink-0 items-center gap-1 rounded-full bg-secondary px-2.5 py-1 transition hover:bg-muted"

@@ -4,7 +4,6 @@ import {
   IconLanguage,
   IconNotebook,
   IconBooks,
-  IconHeartbeat,
   IconBulb,
   IconCalendar,
   IconDroplet,
@@ -30,7 +29,6 @@ export const MENU_MODULOS: ModuloMenu[] = [
   { label: "Diário", to: "/diario", icon: IconNotebook },
   { label: "Livros", to: "/livros", icon: IconBooks },
   { label: "Hidratação", to: "/agua", icon: IconDroplet },
-  { label: "Saúde", to: "/saude", icon: IconHeartbeat },
   { label: "Melhorias", to: "/melhorias", icon: IconBulb },
   { label: "Cadastros", to: "/cadastros", icon: IconSettings },
 ];

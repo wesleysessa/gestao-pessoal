@@ -4,7 +4,6 @@ import {
   IconNotebook,
   IconBooks,
   IconDroplet,
-  IconHeartbeat,
   IconCalendar,
 } from "@tabler/icons-react";
 import { Card } from "@/components/ui/card";
@@ -59,14 +58,6 @@ const MODULOS: Modulo[] = [
     bg: "bg-blue-50 dark:bg-blue-950/40",
     border: "border-blue-200 dark:border-blue-900",
     accent: "text-blue-600 dark:text-blue-400",
-  },
-  {
-    rotulo: "Check-in Saúde",
-    to: "/saude",
-    icon: IconHeartbeat,
-    bg: "bg-green-50 dark:bg-green-950/40",
-    border: "border-green-200 dark:border-green-900",
-    accent: "text-green-600 dark:text-green-400",
   },
   {
     rotulo: "Agenda Pessoal",

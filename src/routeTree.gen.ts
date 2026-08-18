@@ -21,7 +21,6 @@ import { Route as AuthenticatedLivrosRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMelhoriasRouteImport } from './routes/_authenticated/melhorias'
 import { Route as AuthenticatedPrioridadesRouteImport } from './routes/_authenticated/prioridades'
 import { Route as AuthenticatedRotinasRouteImport } from './routes/_authenticated/rotinas'
-import { Route as AuthenticatedSaudeRouteImport } from './routes/_authenticated/saude'
 import { Route as AuthenticatedVocabularioRouteImport } from './routes/_authenticated/vocabulario'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -85,11 +84,6 @@ const AuthenticatedRotinasRoute = AuthenticatedRotinasRouteImport.update({
   path: '/rotinas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSaudeRoute = AuthenticatedSaudeRouteImport.update({
-  id: '/saude',
-  path: '/saude',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedVocabularioRoute =
   AuthenticatedVocabularioRouteImport.update({
     id: '/vocabulario',
@@ -109,7 +103,6 @@ export interface FileRoutesByFullPath {
   '/melhorias': typeof AuthenticatedMelhoriasRoute
   '/prioridades': typeof AuthenticatedPrioridadesRoute
   '/rotinas': typeof AuthenticatedRotinasRoute
-  '/saude': typeof AuthenticatedSaudeRoute
   '/vocabulario': typeof AuthenticatedVocabularioRoute
 }
 export interface FileRoutesByTo {
@@ -123,7 +116,6 @@ export interface FileRoutesByTo {
   '/melhorias': typeof AuthenticatedMelhoriasRoute
   '/prioridades': typeof AuthenticatedPrioridadesRoute
   '/rotinas': typeof AuthenticatedRotinasRoute
-  '/saude': typeof AuthenticatedSaudeRoute
   '/vocabulario': typeof AuthenticatedVocabularioRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -140,7 +132,6 @@ export interface FileRoutesById {
   '/_authenticated/melhorias': typeof AuthenticatedMelhoriasRoute
   '/_authenticated/prioridades': typeof AuthenticatedPrioridadesRoute
   '/_authenticated/rotinas': typeof AuthenticatedRotinasRoute
-  '/_authenticated/saude': typeof AuthenticatedSaudeRoute
   '/_authenticated/vocabulario': typeof AuthenticatedVocabularioRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
@@ -158,7 +149,6 @@ export interface FileRouteTypes {
     | '/melhorias'
     | '/prioridades'
     | '/rotinas'
-    | '/saude'
     | '/vocabulario'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -172,7 +162,6 @@ export interface FileRouteTypes {
     | '/melhorias'
     | '/prioridades'
     | '/rotinas'
-    | '/saude'
     | '/vocabulario'
     | '/'
   id:
@@ -188,7 +177,6 @@ export interface FileRouteTypes {
     | '/_authenticated/melhorias'
     | '/_authenticated/prioridades'
     | '/_authenticated/rotinas'
-    | '/_authenticated/saude'
     | '/_authenticated/vocabulario'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -284,13 +272,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRotinasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/saude': {
-      id: '/_authenticated/saude'
-      path: '/saude'
-      fullPath: '/saude'
-      preLoaderRoute: typeof AuthenticatedSaudeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/vocabulario': {
       id: '/_authenticated/vocabulario'
       path: '/vocabulario'
@@ -311,7 +292,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMelhoriasRoute: typeof AuthenticatedMelhoriasRoute
   AuthenticatedPrioridadesRoute: typeof AuthenticatedPrioridadesRoute
   AuthenticatedRotinasRoute: typeof AuthenticatedRotinasRoute
-  AuthenticatedSaudeRoute: typeof AuthenticatedSaudeRoute
   AuthenticatedVocabularioRoute: typeof AuthenticatedVocabularioRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -326,7 +306,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMelhoriasRoute: AuthenticatedMelhoriasRoute,
   AuthenticatedPrioridadesRoute: AuthenticatedPrioridadesRoute,
   AuthenticatedRotinasRoute: AuthenticatedRotinasRoute,
-  AuthenticatedSaudeRoute: AuthenticatedSaudeRoute,
   AuthenticatedVocabularioRoute: AuthenticatedVocabularioRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }

@@ -11,7 +11,8 @@ export const Route = createFileRoute("/_authenticated/fitbit-callback")({
 /**
  * Página de retorno do OAuth do Google Health (URI de redirecionamento
  * cadastrado no Google Cloud Console). Só troca o "code" pelo token e volta
- * pra Saúde — não tem UI própria além de um aviso de carregando.
+ * pra Home (onde fica o card do Google Health) — não tem UI própria além de
+ * um aviso de carregando.
  */
 function FitbitCallback() {
   const navigate = useNavigate();
@@ -29,23 +30,23 @@ function FitbitCallback() {
 
     if (erro) {
       toast.error("Conexão com o Google Health cancelada.");
-      navigate({ to: "/saude" });
+      navigate({ to: "/" });
       return;
     }
     if (!code || !conferirEstadoGoogleHealth(estado)) {
       toast.error("Não foi possível confirmar a resposta do Google. Tente conectar de novo.");
-      navigate({ to: "/saude" });
+      navigate({ to: "/" });
       return;
     }
 
     trocar.mutate(code, {
       onSuccess: () => {
         toast.success("Google Health conectado!");
-        navigate({ to: "/saude" });
+        navigate({ to: "/" });
       },
       onError: (e: Error) => {
         toast.error(e.message);
-        navigate({ to: "/saude" });
+        navigate({ to: "/" });
       },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -406,6 +406,8 @@ export type Database = {
           texto: string;
           nota: number | null;
           aprendizado: string | null;
+          humor: number | null;
+          energia: number | null;
           created_at: string;
         };
         Insert: {
@@ -416,6 +418,8 @@ export type Database = {
           texto: string;
           nota?: number | null;
           aprendizado?: string | null;
+          humor?: number | null;
+          energia?: number | null;
           created_at?: string;
         };
         Update: {
@@ -426,6 +430,8 @@ export type Database = {
           texto?: string;
           nota?: number | null;
           aprendizado?: string | null;
+          humor?: number | null;
+          energia?: number | null;
           created_at?: string;
         };
         Relationships: [];
@@ -493,39 +499,6 @@ export type Database = {
           congelamentos_disponiveis?: number;
           ultimo_dia_processado?: string | null;
           updated_at?: string;
-        };
-        Relationships: [];
-      };
-      saude_checkins: {
-        Row: {
-          id: string;
-          user_id: string;
-          data: string;
-          humor: number;
-          energia: number | null;
-          sono: number | null;
-          obs: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id?: string;
-          data?: string;
-          humor: number;
-          energia?: number | null;
-          sono?: number | null;
-          obs?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          data?: string;
-          humor?: number;
-          energia?: number | null;
-          sono?: number | null;
-          obs?: string | null;
-          created_at?: string;
         };
         Relationships: [];
       };

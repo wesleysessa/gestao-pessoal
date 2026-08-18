@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  IconBarbell,
   IconCamera,
   IconNotebook,
   IconPhoto,
@@ -24,7 +25,8 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { dataLocalDe, fmtData, hoje } from "@/lib/data";
+import { cn } from "@/lib/utils";
+import { addDias, dataLocalDe, domingoDaSemana, fmtData, hoje, segundaDaSemana } from "@/lib/data";
 import { useSignedUrl } from "@/lib/use-signed-url";
 import { useCurrentProfile } from "@/features/auth/use-current-profile";
 import {
@@ -38,10 +40,17 @@ import {
 } from "@/features/diario/hooks";
 import { FOTOS_BUCKET } from "@/features/diario/service";
 import type { EntradaDiario, FotoDiario } from "@/features/diario/types";
+import {
+  useCheckinsAcademia,
+  useDesmarcarCheckinAcademia,
+  useMarcarCheckinAcademiaHoje,
+} from "@/features/academia/hooks";
 
 export const Route = createFileRoute("/_authenticated/diario")({
   component: Diario,
 });
+
+const HUMORES = ["Péssimo", "Ruim", "Neutro", "Bom", "Ótimo"];
 
 const notaChartConfig = {
   nota: { label: "Nota do dia", color: "var(--color-primary)" },
@@ -56,6 +65,36 @@ function diasDoMesAteHoje(): string[] {
     dias.push(dataLocalDe(dt));
   }
   return dias;
+}
+
+function Escala({
+  valor,
+  onEscolher,
+  rotulos,
+}: {
+  valor: number;
+  onEscolher: (n: number) => void;
+  rotulos?: string[];
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onEscolher(n)}
+          className={cn(
+            "rounded-md border px-3 py-2 text-xs font-semibold transition",
+            n === valor
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-input bg-transparent text-foreground",
+          )}
+        >
+          {rotulos ? rotulos[n - 1] : n}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 /** Tira/faixa de miniaturas do dia — clique abre a galeria completa em dialog. */
@@ -192,11 +231,18 @@ function Diario() {
   const remover = useDeleteEntradaDiario();
   const enviarFoto = useUploadFotoEntrada();
 
+  const { data: checkinsAcademia = [] } = useCheckinsAcademia();
+  const marcarAcademia = useMarcarCheckinAcademiaHoje();
+  const desmarcarAcademia = useDesmarcarCheckinAcademia();
+  const checkinAcademiaHoje = checkinsAcademia.find((c) => c.data === hoje());
+
   const [editando, setEditando] = useState<EntradaDiario | null>(null);
   const [titulo, setTitulo] = useState("");
   const [aprendizado, setAprendizado] = useState("");
   const [texto, setTexto] = useState("");
   const [nota, setNota] = useState(0);
+  const [humor, setHumor] = useState(0);
+  const [energia, setEnergia] = useState(0);
   const [novasFotos, setNovasFotos] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -209,6 +255,8 @@ function Diario() {
     setAprendizado(e.aprendizado ?? "");
     setTexto(e.texto);
     setNota(e.nota ?? 0);
+    setHumor(e.humor ?? 0);
+    setEnergia(e.energia ?? 0);
     setNovasFotos([]);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -219,7 +267,19 @@ function Diario() {
     setAprendizado("");
     setTexto("");
     setNota(0);
+    setHumor(0);
+    setEnergia(0);
     setNovasFotos([]);
+  }
+
+  function alternarAcademia() {
+    if (checkinAcademiaHoje) {
+      desmarcarAcademia.mutate(checkinAcademiaHoje.id, {
+        onError: (e: Error) => toast.error(e.message),
+      });
+    } else {
+      marcarAcademia.mutate(undefined, { onError: (e: Error) => toast.error(e.message) });
+    }
   }
 
   async function enviarFotosPendentes(entradaId: string) {
@@ -240,6 +300,8 @@ function Diario() {
       aprendizado: aprendizado.trim() || null,
       texto: texto.trim(),
       nota: nota > 0 ? nota : null,
+      humor: humor > 0 ? humor : null,
+      energia: energia > 0 ? energia : null,
     };
     if (editando) {
       atualizar.mutate(
@@ -271,6 +333,27 @@ function Diario() {
 
   const salvando = criar.isPending || atualizar.isPending || enviarFoto.isPending;
 
+  const diasComAcademia = useMemo(
+    () => new Set(checkinsAcademia.map((c) => c.data)),
+    [checkinsAcademia],
+  );
+
+  // Academia conta domingo a domingo (igual ao antigo Check-in Saúde).
+  const semanaAcademia = useMemo(() => domingoDaSemana(hoje()), []);
+  const checkinsNaSemana = useMemo(() => {
+    const fimSemana = addDias(semanaAcademia, 6);
+    return checkinsAcademia.filter((c) => c.data >= semanaAcademia && c.data <= fimSemana).length;
+  }, [checkinsAcademia, semanaAcademia]);
+
+  // Energia continua na semana segunda-domingo (mesma convenção do resto do app).
+  const semanaAtual = useMemo(() => segundaDaSemana(hoje()), []);
+  const mediaEnergiaSemana = useMemo(() => {
+    const valores = entradas
+      .filter((e) => e.data >= semanaAtual && e.data <= hoje() && e.energia != null)
+      .map((e) => e.energia as number);
+    return valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : null;
+  }, [entradas, semanaAtual]);
+
   const notaPorDia = useMemo(() => {
     const somas = new Map<string, { soma: number; qtd: number }>();
     for (const e of entradas) {
@@ -296,6 +379,15 @@ function Diario() {
     return valores.reduce((a, b) => a + b, 0) / valores.length;
   }, [notaPorDia]);
 
+  const ultimosComHumor = useMemo(
+    () =>
+      [...entradas]
+        .filter((e) => e.humor != null)
+        .sort((a, b) => a.data.localeCompare(b.data))
+        .slice(-14),
+    [entradas],
+  );
+
   const aprendizados = useMemo(() => entradas.filter((e) => e.aprendizado).length, [entradas]);
 
   return (
@@ -311,6 +403,16 @@ function Diario() {
           <span>
             <strong className="text-foreground">{aprendizados}</strong>{" "}
             {aprendizados === 1 ? "aprendizado" : "aprendizados"} 🌟
+          </span>
+          {mediaEnergiaSemana != null && (
+            <span>
+              <strong className="text-foreground">{mediaEnergiaSemana.toFixed(1)}</strong> energia
+              média (semana)
+            </span>
+          )}
+          <span>
+            <strong className="text-foreground">{checkinsNaSemana}</strong> vezes na academia
+            (semana)
           </span>
         </div>
       )}
@@ -343,6 +445,15 @@ function Diario() {
               placeholder="O que marcou o seu dia?"
               className="min-h-[120px]"
             />
+          </div>
+
+          <div className="mb-3.5 space-y-1.5">
+            <Label>Humor (opcional)</Label>
+            <Escala valor={humor} onEscolher={setHumor} rotulos={HUMORES} />
+          </div>
+          <div className="mb-3.5 space-y-1.5">
+            <Label>Energia (1 = esgotado · 5 = a mil, opcional)</Label>
+            <Escala valor={energia} onEscolher={setEnergia} />
           </div>
           <div className="mb-3 space-y-1.5">
             <Label>Nota de produtividade (opcional)</Label>
@@ -406,6 +517,20 @@ function Diario() {
         </CardContent>
       </Card>
 
+      <Card className="mb-5">
+        <CardContent className="flex items-center justify-between gap-2 pt-6">
+          <Button
+            variant={checkinAcademiaHoje ? "default" : "outline"}
+            onClick={alternarAcademia}
+            disabled={marcarAcademia.isPending || desmarcarAcademia.isPending}
+          >
+            <IconBarbell className="size-4" />
+            {checkinAcademiaHoje ? "Fui à academia hoje ✓" : "Check Academia"}
+          </Button>
+          <span className="text-xs text-muted-foreground">({checkinsNaSemana}/7)</span>
+        </CardContent>
+      </Card>
+
       {mediaDoMes != null && (
         <Card className="mb-5">
           <CardContent className="pt-6">
@@ -463,6 +588,33 @@ function Diario() {
         </Card>
       )}
 
+      {ultimosComHumor.length > 1 && (
+        <Card className="mb-5">
+          <CardContent className="pt-6">
+            <div className="mb-2.5 text-xs uppercase tracking-wide text-muted-foreground">
+              Humor — últimos {ultimosComHumor.length} registros
+            </div>
+            <div className="flex h-20 items-end gap-1">
+              {ultimosComHumor.map((e) => (
+                <div
+                  key={e.id}
+                  title={`${fmtData(e.data)} — ${HUMORES[(e.humor as number) - 1]}`}
+                  className={cn(
+                    "min-w-2 flex-1 rounded-t",
+                    (e.humor as number) >= 4
+                      ? "bg-green-500"
+                      : e.humor === 3
+                        ? "bg-amber-400"
+                        : "bg-primary",
+                  )}
+                  style={{ height: `${((e.humor as number) / 5) * 100}%` }}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : entradas.length === 0 ? (
@@ -491,6 +643,11 @@ function Diario() {
                     )}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
+                    {diasComAcademia.has(e.data) && (
+                      <span className="text-base" title="Foi à academia">
+                        🏋️
+                      </span>
+                    )}
                     {e.aprendizado && (
                       <IconStar
                         className="size-4 fill-amber-400 text-amber-400"
@@ -506,6 +663,12 @@ function Diario() {
                     </button>
                   </div>
                 </div>
+                {(e.humor != null || e.energia != null) && (
+                  <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+                    {e.humor != null && <span>Humor: {HUMORES[e.humor - 1]}</span>}
+                    {e.energia != null && <span>Energia: {e.energia}/5</span>}
+                  </div>
+                )}
                 {e.nota != null && (
                   <div className="mt-1.5">
                     <StarRating value={e.nota} size={14} />

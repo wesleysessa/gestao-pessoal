@@ -4,7 +4,7 @@ export type EntradaDiario = Database["public"]["Tables"]["diario"]["Row"];
 
 export type NovaEntradaDiario = Pick<
   Database["public"]["Tables"]["diario"]["Insert"],
-  "titulo" | "texto" | "nota" | "aprendizado"
+  "titulo" | "texto" | "nota" | "aprendizado" | "humor" | "energia"
 >;
 
 export type FotoDiario = Database["public"]["Tables"]["diario_fotos"]["Row"];
