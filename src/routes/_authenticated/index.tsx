@@ -10,6 +10,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { FraseDoDia } from "@/components/frase-do-dia";
 import { AprendizadoDoDia } from "@/components/aprendizado-do-dia";
+import { GoogleHealthCard } from "@/components/google-health-card";
 import type { AppIcon } from "@/components/app-icon";
 import { useStreakResumo } from "@/features/streak/hooks";
 
@@ -83,10 +84,9 @@ function Home() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
-      <FraseDoDia />
-      <AprendizadoDoDia />
+      <GoogleHealthCard />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {MODULOS.map((m) => {
           const feita = feitaPorTo.get(m.to);
           return (
@@ -108,6 +108,9 @@ function Home() {
           );
         })}
       </div>
+
+      <FraseDoDia />
+      <AprendizadoDoDia />
     </div>
   );
 }
