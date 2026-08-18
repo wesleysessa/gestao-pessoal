@@ -592,6 +592,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      agenda_fotos: {
+        Row: {
+          id: string;
+          user_id: string;
+          evento_id: string;
+          storage_path: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          evento_id: string;
+          storage_path: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          evento_id?: string;
+          storage_path?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

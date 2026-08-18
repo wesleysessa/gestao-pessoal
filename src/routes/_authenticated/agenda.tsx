@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   IconAlertTriangle,
   IconCalendarEvent,
+  IconCamera,
   IconChevronLeft,
   IconChevronRight,
   IconCircle,
@@ -12,7 +13,9 @@ import {
   IconFlag,
   IconLayoutGrid,
   IconMapPin,
+  IconPhoto,
   IconTrash,
+  IconX,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { SectionHeader, FAB } from "@/components/ds";
@@ -37,16 +40,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { addDias, fmtData, hoje, segundaDaSemana } from "@/lib/data";
+import { useSignedUrl } from "@/lib/use-signed-url";
+import { useCurrentProfile } from "@/features/auth/use-current-profile";
 import {
   useConclusoes,
   useCreateEvento,
   useDeleteEvento,
+  useDeleteFotoEvento,
   useDesmarcarConcluido,
   useEventos,
+  useFotosEvento,
   useMarcarConcluido,
   useUpdateEvento,
+  useUploadFotoEvento,
 } from "@/features/agenda/hooks";
-import { expandirOcorrencias } from "@/features/agenda/service";
+import { expandirOcorrencias, FOTOS_BUCKET } from "@/features/agenda/service";
 import {
   CORES_EVENTO,
   CORES_EVENTO_ORDEM,
@@ -55,6 +63,7 @@ import {
   RECORRENCIA_LABEL,
   type CorEvento,
   type Evento,
+  type FotoEvento,
   type NovoEvento,
   type Ocorrencia,
   type Recorrencia,
@@ -162,6 +171,133 @@ function valoresDoEvento(e: Evento): FormValues {
   };
 }
 
+function FotoThumbInner({ path }: { path: string }) {
+  const { data: url } = useSignedUrl(FOTOS_BUCKET, path);
+  return url ? (
+    <img src={url} alt="" className="size-full object-cover" />
+  ) : (
+    <div className="size-full animate-pulse bg-muted" />
+  );
+}
+
+/** Miniatura que abre o arquivo original (sem corte) numa nova aba. */
+function FotoOriginalLink({ path, className }: { path: string; className?: string }) {
+  const { data: url } = useSignedUrl(FOTOS_BUCKET, path);
+  if (!url) return <div className={`animate-pulse bg-muted ${className ?? ""}`} />;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      title="Abrir foto original"
+      className={className}
+    >
+      <img src={url} alt="" className="size-full object-cover" />
+    </a>
+  );
+}
+
+/** Faixa de miniaturas do card — clique abre a galeria completa em dialog. */
+function FotosDoCard({ eventoId }: { eventoId: string }) {
+  const { data: fotos = [] } = useFotosEvento(eventoId);
+  const remover = useDeleteFotoEvento();
+  const [aberto, setAberto] = useState(false);
+
+  if (fotos.length === 0) return null;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setAberto(true);
+        }}
+        className="mt-1.5 flex items-center gap-1.5"
+      >
+        <div className="flex -space-x-2">
+          {fotos.slice(0, 4).map((f) => (
+            <div
+              key={f.id}
+              className="size-7 overflow-hidden rounded-md border-2 border-card bg-muted"
+            >
+              <FotoThumbInner path={f.storage_path} />
+            </div>
+          ))}
+        </div>
+        <span className="text-xs text-muted-foreground">
+          <IconPhoto className="inline size-3.5 align-text-bottom" /> {fotos.length}
+        </span>
+      </button>
+
+      <Dialog open={aberto} onOpenChange={setAberto}>
+        <DialogContent className="max-w-lg" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>Fotos</DialogTitle>
+          </DialogHeader>
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Toque numa foto para abrir o original
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {fotos.map((f) => (
+              <div
+                key={f.id}
+                className="group relative aspect-square overflow-hidden rounded-md bg-muted"
+              >
+                <FotoOriginalLink path={f.storage_path} className="block size-full" />
+                <button
+                  onClick={() =>
+                    remover.mutate(
+                      { id: f.id, storagePath: f.storage_path, eventoId },
+                      { onError: (e: Error) => toast.error(e.message) },
+                    )
+                  }
+                  aria-label="Excluir foto"
+                  className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                >
+                  <IconX className="size-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+/** Fotos já salvas de um evento em edição — removíveis direto. */
+function FotosExistentes({ eventoId }: { eventoId: string }) {
+  const { data: fotos = [] } = useFotosEvento(eventoId);
+  const remover = useDeleteFotoEvento();
+
+  if (fotos.length === 0) return null;
+
+  return (
+    <div className="mb-3 flex flex-wrap gap-2">
+      {fotos.map((f: FotoEvento) => (
+        <div key={f.id} className="group relative size-16 overflow-hidden rounded-md bg-muted">
+          <FotoOriginalLink path={f.storage_path} className="block size-full" />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              remover.mutate(
+                { id: f.id, storagePath: f.storage_path, eventoId },
+                { onError: (err: Error) => toast.error(err.message) },
+              );
+            }}
+            aria-label="Excluir foto"
+            className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+          >
+            <IconX className="size-3" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function EventoDialog({
   aberto,
   onOpenChange,
@@ -173,17 +309,36 @@ function EventoDialog({
   evento: Evento | null;
   dataPadrao: string;
 }) {
+  const { data: profile } = useCurrentProfile();
   const criar = useCreateEvento();
   const atualizar = useUpdateEvento();
   const remover = useDeleteEvento();
   const criarPrioridade = useCreatePrioridade();
+  const enviarFoto = useUploadFotoEvento();
   const [v, setV] = useState<FormValues>(() => valoresVazios(dataPadrao));
+  const [novasFotos, setNovasFotos] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const previews = useMemo(() => novasFotos.map((f) => URL.createObjectURL(f)), [novasFotos]);
+  useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
 
   useEffect(() => {
     if (!aberto) return;
     setV(evento ? valoresDoEvento(evento) : valoresVazios(dataPadrao));
+    setNovasFotos([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aberto, evento]);
+
+  async function enviarFotosPendentes(eventoId: string) {
+    if (novasFotos.length === 0 || !profile) return;
+    for (const file of novasFotos) {
+      try {
+        await enviarFoto.mutateAsync({ eventoId, userId: profile.id, file });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Falha ao enviar foto");
+      }
+    }
+  }
 
   const set = <K extends keyof FormValues>(key: K, val: FormValues[K]) =>
     setV((prev) => ({ ...prev, [key]: val }));
@@ -196,7 +351,7 @@ function EventoDialog({
     );
   }
 
-  const salvando = criar.isPending || atualizar.isPending;
+  const salvando = criar.isPending || atualizar.isPending || enviarFoto.isPending;
   const diaInteiroEfetivo = v.aniversario || v.diaInteiro;
 
   function salvar() {
@@ -227,12 +382,26 @@ function EventoDialog({
       destaque: v.destaque,
       radar: v.radar,
     };
-    const onOk = () => onOpenChange(false);
     const onErr = (e: Error) => toast.error(e.message);
     if (evento) {
-      atualizar.mutate({ id: evento.id, input }, { onSuccess: onOk, onError: onErr });
+      atualizar.mutate(
+        { id: evento.id, input },
+        {
+          onSuccess: async () => {
+            await enviarFotosPendentes(evento.id);
+            onOpenChange(false);
+          },
+          onError: onErr,
+        },
+      );
     } else {
-      criar.mutate(input, { onSuccess: onOk, onError: onErr });
+      criar.mutate(input, {
+        onSuccess: async (novo) => {
+          await enviarFotosPendentes(novo.id);
+          onOpenChange(false);
+        },
+        onError: onErr,
+      });
     }
   }
 
@@ -487,6 +656,50 @@ function EventoDialog({
                 Por enquanto é só uma anotação — lembrete por notificação é o próximo passo.
               </p>
             </div>
+
+            <div className="space-y-1.5">
+              <Label>Fotos (opcional)</Label>
+              {evento && <FotosExistentes eventoId={evento.id} />}
+              {previews.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-2">
+                  {previews.map((url, i) => (
+                    <div
+                      key={url}
+                      className="group relative size-16 overflow-hidden rounded-md bg-muted"
+                    >
+                      <img src={url} alt="" className="size-full object-cover" />
+                      <button
+                        onClick={() => setNovasFotos((fs) => fs.filter((_, idx) => idx !== i))}
+                        aria-label="Remover"
+                        className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+                      >
+                        <IconX className="size-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  setNovasFotos((fs) => [...fs, ...files]);
+                  e.target.value = "";
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <IconCamera className="size-4" /> Anexar fotos
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -584,6 +797,7 @@ function CardOcorrencia({
               {o.evento.local}
             </div>
           )}
+          <FotosDoCard eventoId={o.evento.id} />
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {acaoExtra}

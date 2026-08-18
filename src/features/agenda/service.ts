@@ -2,15 +2,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { dataLocalDe } from "@/lib/data";
 import type { Evento, NovoEvento, Ocorrencia } from "./types";
 
+export const FOTOS_BUCKET = "agenda-fotos";
+
 export async function listEventos() {
   const { data, error } = await supabase.from("agenda_eventos").select("*").order("data");
   if (error) throw error;
   return data;
 }
 
+/** Retorna a linha criada — precisamos do id pra poder anexar fotos em seguida. */
 export async function createEvento(input: NovoEvento) {
-  const { error } = await supabase.from("agenda_eventos").insert(input);
+  const { data, error } = await supabase.from("agenda_eventos").insert(input).select("*").single();
   if (error) throw error;
+  return data;
 }
 
 export async function updateEvento(id: string, input: NovoEvento) {
@@ -20,6 +24,37 @@ export async function updateEvento(id: string, input: NovoEvento) {
 
 export async function deleteEvento(id: string) {
   const { error } = await supabase.from("agenda_eventos").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function listFotosEvento(eventoId: string) {
+  const { data, error } = await supabase
+    .from("agenda_fotos")
+    .select("*")
+    .eq("evento_id", eventoId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function uploadFotoEvento(eventoId: string, userId: string, file: File) {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `${userId}/${eventoId}/${crypto.randomUUID()}.${ext}`;
+  const { error: uploadError } = await supabase.storage.from(FOTOS_BUCKET).upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: file.type,
+  });
+  if (uploadError) throw uploadError;
+  const { error } = await supabase
+    .from("agenda_fotos")
+    .insert({ evento_id: eventoId, storage_path: path });
+  if (error) throw error;
+}
+
+export async function deleteFotoEvento(id: string, storagePath: string) {
+  await supabase.storage.from(FOTOS_BUCKET).remove([storagePath]);
+  const { error } = await supabase.from("agenda_fotos").delete().eq("id", id);
   if (error) throw error;
 }
 

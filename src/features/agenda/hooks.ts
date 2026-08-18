@@ -2,16 +2,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createEvento,
   deleteEvento,
+  deleteFotoEvento,
   desmarcarConcluido,
   listConclusoes,
   listEventos,
+  listFotosEvento,
   marcarConcluido,
   updateEvento,
+  uploadFotoEvento,
 } from "./service";
 import type { NovoEvento } from "./types";
 
 const KEY = ["agenda-eventos"];
 const CONCLUSOES_KEY = ["agenda-conclusoes"];
+const fotosKey = (eventoId: string) => ["agenda-fotos", eventoId];
 
 export function useEventos() {
   return useQuery({ queryKey: KEY, queryFn: listEventos });
@@ -59,5 +63,31 @@ export function useDesmarcarConcluido() {
   return useMutation({
     mutationFn: (id: string) => desmarcarConcluido(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: CONCLUSOES_KEY }),
+  });
+}
+
+export function useFotosEvento(eventoId: string | undefined) {
+  return useQuery({
+    queryKey: fotosKey(eventoId ?? ""),
+    queryFn: () => listFotosEvento(eventoId as string),
+    enabled: !!eventoId,
+  });
+}
+
+export function useUploadFotoEvento() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ eventoId, userId, file }: { eventoId: string; userId: string; file: File }) =>
+      uploadFotoEvento(eventoId, userId, file),
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: fotosKey(vars.eventoId) }),
+  });
+}
+
+export function useDeleteFotoEvento() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, storagePath }: { id: string; storagePath: string; eventoId: string }) =>
+      deleteFotoEvento(id, storagePath),
+    onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: fotosKey(vars.eventoId) }),
   });
 }
