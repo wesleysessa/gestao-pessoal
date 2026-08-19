@@ -6,6 +6,7 @@ import {
   IconLayoutGrid,
   IconPencil,
   IconPhoto,
+  IconSearch,
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
@@ -199,6 +200,7 @@ function Vocabulario() {
   const [classeGramatical, setClasseGramatical] = useState<ClasseGramatical | "">("");
   const [antonimo, setAntonimo] = useState("");
   const [filtro, setFiltro] = useState("todos");
+  const [busca, setBusca] = useState("");
   const [modo, setModo] = useState<"lista" | "phrasal">("lista");
   const [revisao, setRevisao] = useState(false);
   const [revelados, setRevelados] = useState<Record<string, boolean>>({});
@@ -209,7 +211,18 @@ function Vocabulario() {
   useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
 
   const idiomas = useMemo(() => [...new Set(itens.map((i) => i.idioma))], [itens]);
-  const visiveis = filtro === "todos" ? itens : itens.filter((i) => i.idioma === filtro);
+  const visiveis = useMemo(() => {
+    let lista = filtro === "todos" ? itens : itens.filter((i) => i.idioma === filtro);
+    const termoBusca = busca.trim().toLowerCase();
+    if (termoBusca) {
+      lista = lista.filter((i) =>
+        [i.termo, i.traducao, i.exemplo, i.antonimo].some((campo) =>
+          campo?.toLowerCase().includes(termoBusca),
+        ),
+      );
+    }
+    return lista;
+  }, [itens, filtro, busca]);
   const phrasalVerbs = useMemo(
     () => itens.filter((i) => i.classe_gramatical === "phrasal_verb"),
     [itens],
@@ -505,6 +518,25 @@ function Vocabulario() {
         <>
           {itens.length > 0 && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
+              <div className="relative w-full sm:w-56">
+                <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder="Buscar palavra..."
+                  className="pl-8"
+                />
+                {busca && (
+                  <button
+                    type="button"
+                    onClick={() => setBusca("")}
+                    aria-label="Limpar busca"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <IconX className="size-3.5" />
+                  </button>
+                )}
+              </div>
               <Select value={filtro} onValueChange={setFiltro}>
                 <SelectTrigger className="w-auto">
                   <SelectValue />
@@ -541,7 +573,11 @@ function Vocabulario() {
           ) : visiveis.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-card border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
               <IconLanguage className="size-8" stroke={1.5} />
-              <p className="text-sm">Nenhuma palavra ainda. Registre a primeira acima.</p>
+              <p className="text-sm">
+                {itens.length === 0
+                  ? "Nenhuma palavra ainda. Registre a primeira acima."
+                  : "Nenhuma palavra encontrada com esse filtro."}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
