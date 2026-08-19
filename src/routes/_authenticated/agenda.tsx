@@ -14,6 +14,7 @@ import {
   IconLayoutGrid,
   IconMapPin,
   IconPhoto,
+  IconSearch,
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
@@ -750,6 +751,7 @@ function CardOcorrencia({
   onClick,
   onToggleConcluido,
   acaoExtra,
+  mostrarData,
 }: {
   o: Ocorrencia;
   concluido: boolean;
@@ -757,6 +759,8 @@ function CardOcorrencia({
   onClick: () => void;
   onToggleConcluido: () => void;
   acaoExtra?: ReactNode;
+  /** Mostra a data junto do horário — usado nos resultados de busca, que misturam vários dias. */
+  mostrarData?: boolean;
 }) {
   return (
     <Card
@@ -788,7 +792,9 @@ function CardOcorrencia({
           </div>
           <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
             <IconClock className="size-3.5" />
-            {horarioOcorrencia(o)}
+            {mostrarData
+              ? `${fmtData(o.dataOcorrencia)} · ${horarioOcorrencia(o)}`
+              : horarioOcorrencia(o)}
             {atrasado && <span className="ml-1 font-semibold text-destructive">Atrasado</span>}
           </div>
           {o.evento.local && (
@@ -978,6 +984,8 @@ function Agenda() {
   }
 
   const [modo, setModo] = useState<"calendario" | "quadro">("calendario");
+  const [buscaAberta, setBuscaAberta] = useState(false);
+  const [busca, setBusca] = useState("");
 
   const agora = new Date();
   const [mesExibido, setMesExibido] = useState(
@@ -1084,6 +1092,26 @@ function Agenda() {
       .sort((a, b) => a.dataOcorrencia.localeCompare(b.dataOcorrencia));
   }, [eventos, hojeIso, conclusaoPorChave]);
 
+  // Busca por título/descrição/local — vale pra qualquer data, passada ou
+  // futura (não só o mês/semana em exibição), pra achar "aquele lançamento
+  // que não lembro se fiz".
+  const eventosDaBusca = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    if (!termo) return [];
+    return eventos.filter((e) =>
+      [e.titulo, e.descricao, e.local].some((campo) => campo?.toLowerCase().includes(termo)),
+    );
+  }, [eventos, busca]);
+
+  const resultadosBusca = useMemo(() => {
+    if (eventosDaBusca.length === 0) return [];
+    const inicio = addDias(hojeIso, -365);
+    const fim = addDias(hojeIso, 730);
+    return expandirOcorrencias(eventosDaBusca, inicio, fim).sort((a, b) =>
+      a.dataOcorrencia.localeCompare(b.dataOcorrencia),
+    );
+  }, [eventosDaBusca, hojeIso]);
+
   function abrirNovo() {
     setEditando(null);
     setDialogAberto(true);
@@ -1099,6 +1127,23 @@ function Agenda() {
       <div className="mb-1 flex items-start justify-between gap-2">
         <SectionHeader overline="Gestão Pessoal" title="Agenda" />
         <div className="mt-1 flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              setBuscaAberta((v) => !v);
+              if (buscaAberta) setBusca("");
+            }}
+            aria-label="Buscar evento"
+            title="Buscar evento"
+            className={cn(
+              "flex size-8 items-center justify-center rounded-md border transition",
+              buscaAberta
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-input text-muted-foreground hover:bg-muted hover:text-primary",
+            )}
+          >
+            <IconSearch className="size-4" />
+          </button>
           <Link
             to="/prioridades"
             aria-label="Lista de Prioridades"
@@ -1119,243 +1164,303 @@ function Agenda() {
         </div>
       </div>
 
-      {modo === "calendario" && (
+      {buscaAberta && (
+        <div className="relative mb-4">
+          <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            autoFocus
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por título, descrição ou local..."
+            className="pl-8"
+          />
+          {busca && (
+            <button
+              type="button"
+              onClick={() => setBusca("")}
+              aria-label="Limpar busca"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <IconX className="size-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {busca.trim() ? (
+        <div className="flex flex-col gap-2">
+          {resultadosBusca.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-card border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
+              <IconSearch className="size-8" stroke={1.5} />
+              <p className="text-sm">Nenhum evento encontrado com esse termo.</p>
+            </div>
+          ) : (
+            resultadosBusca.map((o) => {
+              const concluido = conclusaoPorChave.has(
+                chaveOcorrencia(o.evento.id, o.dataOcorrencia),
+              );
+              const atrasado = !concluido && !o.evento.aniversario && o.dataOcorrencia < hojeIso;
+              return (
+                <CardOcorrencia
+                  key={`busca-${o.evento.id}-${o.dataOcorrencia}`}
+                  o={o}
+                  concluido={concluido}
+                  atrasado={atrasado}
+                  onClick={() => abrirEdicao(o.evento)}
+                  onToggleConcluido={() => alternarConcluido(o)}
+                  mostrarData
+                />
+              );
+            })
+          )}
+        </div>
+      ) : (
         <>
-          {pendencias.length > 0 && (
-            <Card className="mb-4 border-destructive/40 bg-destructive/5">
-              <CardContent className="p-3.5">
-                <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-destructive">
-                  <IconAlertTriangle className="size-4" />
-                  Pendências ({pendencias.length})
-                </div>
-                <p className="mb-2 text-xs text-muted-foreground">
-                  Passaram sem conclusão — toque pra ver o dia e reagendar.
-                </p>
-                <div className="flex flex-col gap-1.5">
-                  {pendencias.map((o) => (
+          {modo === "calendario" && (
+            <>
+              {pendencias.length > 0 && (
+                <Card className="mb-4 border-destructive/40 bg-destructive/5">
+                  <CardContent className="p-3.5">
+                    <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-destructive">
+                      <IconAlertTriangle className="size-4" />
+                      Pendências ({pendencias.length})
+                    </div>
+                    <p className="mb-2 text-xs text-muted-foreground">
+                      Passaram sem conclusão — toque pra ver o dia e reagendar.
+                    </p>
+                    <div className="flex flex-col gap-1.5">
+                      {pendencias.map((o) => (
+                        <button
+                          key={chaveOcorrencia(o.evento.id, o.dataOcorrencia)}
+                          type="button"
+                          onClick={() => setDiaSelecionado(o.dataOcorrencia)}
+                          className="flex items-center justify-between gap-2 rounded-md bg-card px-2.5 py-1.5 text-left text-xs transition hover:bg-muted"
+                        >
+                          <span className="truncate font-medium text-foreground">
+                            {o.evento.titulo}
+                          </span>
+                          <span className="shrink-0 text-muted-foreground">
+                            {fmtData(o.dataOcorrencia)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card className="mb-4">
+                <CardContent className="pt-5">
+                  <div className="mb-3 flex items-center justify-between">
                     <button
-                      key={chaveOcorrencia(o.evento.id, o.dataOcorrencia)}
-                      type="button"
-                      onClick={() => setDiaSelecionado(o.dataOcorrencia)}
-                      className="flex items-center justify-between gap-2 rounded-md bg-card px-2.5 py-1.5 text-left text-xs transition hover:bg-muted"
+                      onClick={() => setMesExibido(new Date(ano, mesIdx - 1, 1))}
+                      aria-label="Mês anterior"
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted"
                     >
-                      <span className="truncate font-medium text-foreground">
-                        {o.evento.titulo}
-                      </span>
-                      <span className="shrink-0 text-muted-foreground">
-                        {fmtData(o.dataOcorrencia)}
-                      </span>
+                      <IconChevronLeft className="size-4" />
                     </button>
-                  ))}
+                    <div className="text-sm font-semibold text-foreground">
+                      {MESES[mesIdx]} {ano}
+                    </div>
+                    <button
+                      onClick={() => setMesExibido(new Date(ano, mesIdx + 1, 1))}
+                      aria-label="Próximo mês"
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted"
+                    >
+                      <IconChevronRight className="size-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1 text-center">
+                    {DIAS_SEMANA.map((d) => (
+                      <div
+                        key={d}
+                        className="text-[10px] font-medium uppercase text-muted-foreground"
+                      >
+                        {d}
+                      </div>
+                    ))}
+                    {celulas.map((dia, i) => {
+                      if (dia == null) return <div key={`vazio-${i}`} />;
+                      const iso = isoDoDia(ano, mesIdx, dia);
+                      const ehHoje = iso === hojeIso;
+                      const ehSelecionado = iso === diaSelecionado;
+                      const marcas = marcasPorDia.get(iso) ?? [];
+                      return (
+                        <button
+                          key={iso}
+                          onClick={() => setDiaSelecionado(iso)}
+                          className="flex flex-col items-center gap-0.5 py-0.5"
+                        >
+                          <span
+                            className={cn(
+                              "flex size-8 items-center justify-center rounded-full text-xs font-medium transition",
+                              ehSelecionado
+                                ? "bg-primary text-primary-foreground"
+                                : "text-foreground hover:bg-muted",
+                              !ehSelecionado &&
+                                ehHoje &&
+                                "ring-2 ring-primary ring-offset-2 ring-offset-card",
+                            )}
+                          >
+                            {dia}
+                          </span>
+                          <span className="flex h-2.5 items-center gap-0.5">
+                            {marcas.slice(0, 3).map((m, idx) =>
+                              m.aniversario ? (
+                                <span key={idx} className="text-[10px] leading-none">
+                                  🎂
+                                </span>
+                              ) : (
+                                <span
+                                  key={idx}
+                                  className={cn("size-1.5 rounded-full", CORES_EVENTO[m.cor].dot)}
+                                />
+                              ),
+                            )}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <GrupoRadar
+                ocorrencias={radarDaSemana}
+                conclusaoPorChave={conclusaoPorChave}
+                hojeIso={hojeIso}
+                diasDaSemana={diasDaSemana}
+                abrirEdicao={abrirEdicao}
+                alternarConcluido={alternarConcluido}
+                moverEvento={moverEvento}
+              />
+
+              <div className="mb-3 text-sm font-semibold text-foreground">
+                {fmtData(diaSelecionado)}
+                {diaSelecionado === hojeIso && (
+                  <span className="ml-1.5 text-xs font-normal text-muted-foreground">hoje</span>
+                )}
+              </div>
+
+              {isLoading ? (
+                <p className="text-sm text-muted-foreground">Carregando…</p>
+              ) : ocorrenciasDoDia.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 rounded-card border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
+                  <IconCalendarEvent className="size-8" stroke={1.5} />
+                  <p className="text-sm">Nenhum evento neste dia.</p>
                 </div>
-              </CardContent>
-            </Card>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {ocorrenciasDoDia.map((o) => {
+                    const concluido = conclusaoPorChave.has(
+                      chaveOcorrencia(o.evento.id, o.dataOcorrencia),
+                    );
+                    const atrasado =
+                      !concluido && !o.evento.aniversario && o.dataOcorrencia < hojeIso;
+                    return (
+                      <CardOcorrencia
+                        key={`${o.evento.id}-${o.dataOcorrencia}`}
+                        o={o}
+                        concluido={concluido}
+                        atrasado={atrasado}
+                        onClick={() => abrirEdicao(o.evento)}
+                        onToggleConcluido={() => alternarConcluido(o)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
 
-          <Card className="mb-4">
-            <CardContent className="pt-5">
-              <div className="mb-3 flex items-center justify-between">
+          {modo === "quadro" && (
+            <>
+              <div className="mb-4 flex items-center justify-between rounded-md border border-border bg-card p-2">
                 <button
-                  onClick={() => setMesExibido(new Date(ano, mesIdx - 1, 1))}
-                  aria-label="Mês anterior"
+                  onClick={() => setWeekStart((d) => addDias(d, -7))}
+                  aria-label="Semana anterior"
                   className="rounded-md p-1.5 text-muted-foreground hover:bg-muted"
                 >
                   <IconChevronLeft className="size-4" />
                 </button>
-                <div className="text-sm font-semibold text-foreground">
-                  {MESES[mesIdx]} {ano}
-                </div>
+                <span className="text-xs font-semibold text-foreground sm:text-sm">
+                  {fmtData(weekStart)} a {fmtData(addDias(weekStart, 6))}
+                </span>
                 <button
-                  onClick={() => setMesExibido(new Date(ano, mesIdx + 1, 1))}
-                  aria-label="Próximo mês"
+                  onClick={() => setWeekStart((d) => addDias(d, 7))}
+                  aria-label="Próxima semana"
                   className="rounded-md p-1.5 text-muted-foreground hover:bg-muted"
                 >
                   <IconChevronRight className="size-4" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-7 gap-1 text-center">
-                {DIAS_SEMANA.map((d) => (
-                  <div key={d} className="text-[10px] font-medium uppercase text-muted-foreground">
-                    {d}
-                  </div>
-                ))}
-                {celulas.map((dia, i) => {
-                  if (dia == null) return <div key={`vazio-${i}`} />;
-                  const iso = isoDoDia(ano, mesIdx, dia);
-                  const ehHoje = iso === hojeIso;
-                  const ehSelecionado = iso === diaSelecionado;
-                  const marcas = marcasPorDia.get(iso) ?? [];
-                  return (
-                    <button
-                      key={iso}
-                      onClick={() => setDiaSelecionado(iso)}
-                      className="flex flex-col items-center gap-0.5 py-0.5"
-                    >
-                      <span
+              <GrupoRadar
+                ocorrencias={radarDaSemana}
+                conclusaoPorChave={conclusaoPorChave}
+                hojeIso={hojeIso}
+                diasDaSemana={diasDaSemana}
+                abrirEdicao={abrirEdicao}
+                alternarConcluido={alternarConcluido}
+                moverEvento={moverEvento}
+              />
+
+              {isLoading ? (
+                <p className="text-sm text-muted-foreground">Carregando…</p>
+              ) : (
+                <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2">
+                  {diasDaSemana.map((d) => {
+                    const doDia = ocorrenciasPorDiaQuadro.get(d.iso) ?? [];
+                    return (
+                      <div
+                        key={d.iso}
                         className={cn(
-                          "flex size-8 items-center justify-center rounded-full text-xs font-medium transition",
-                          ehSelecionado
-                            ? "bg-primary text-primary-foreground"
-                            : "text-foreground hover:bg-muted",
-                          !ehSelecionado &&
-                            ehHoje &&
-                            "ring-2 ring-primary ring-offset-2 ring-offset-card",
+                          "flex w-[78vw] shrink-0 flex-col gap-2 rounded-md border border-t-4 border-border bg-secondary/40 p-2.5 sm:w-64",
+                          d.iso === hojeIso && "border-t-primary",
                         )}
                       >
-                        {dia}
-                      </span>
-                      <span className="flex h-2.5 items-center gap-0.5">
-                        {marcas.slice(0, 3).map((m, idx) =>
-                          m.aniversario ? (
-                            <span key={idx} className="text-[10px] leading-none">
-                              🎂
-                            </span>
-                          ) : (
-                            <span
-                              key={idx}
-                              className={cn("size-1.5 rounded-full", CORES_EVENTO[m.cor].dot)}
-                            />
-                          ),
-                        )}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          <GrupoRadar
-            ocorrencias={radarDaSemana}
-            conclusaoPorChave={conclusaoPorChave}
-            hojeIso={hojeIso}
-            diasDaSemana={diasDaSemana}
-            abrirEdicao={abrirEdicao}
-            alternarConcluido={alternarConcluido}
-            moverEvento={moverEvento}
-          />
-
-          <div className="mb-3 text-sm font-semibold text-foreground">
-            {fmtData(diaSelecionado)}
-            {diaSelecionado === hojeIso && (
-              <span className="ml-1.5 text-xs font-normal text-muted-foreground">hoje</span>
-            )}
-          </div>
-
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Carregando…</p>
-          ) : ocorrenciasDoDia.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-card border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
-              <IconCalendarEvent className="size-8" stroke={1.5} />
-              <p className="text-sm">Nenhum evento neste dia.</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {ocorrenciasDoDia.map((o) => {
-                const concluido = conclusaoPorChave.has(
-                  chaveOcorrencia(o.evento.id, o.dataOcorrencia),
-                );
-                const atrasado = !concluido && !o.evento.aniversario && o.dataOcorrencia < hojeIso;
-                return (
-                  <CardOcorrencia
-                    key={`${o.evento.id}-${o.dataOcorrencia}`}
-                    o={o}
-                    concluido={concluido}
-                    atrasado={atrasado}
-                    onClick={() => abrirEdicao(o.evento)}
-                    onToggleConcluido={() => alternarConcluido(o)}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </>
-      )}
-
-      {modo === "quadro" && (
-        <>
-          <div className="mb-4 flex items-center justify-between rounded-md border border-border bg-card p-2">
-            <button
-              onClick={() => setWeekStart((d) => addDias(d, -7))}
-              aria-label="Semana anterior"
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-muted"
-            >
-              <IconChevronLeft className="size-4" />
-            </button>
-            <span className="text-xs font-semibold text-foreground sm:text-sm">
-              {fmtData(weekStart)} a {fmtData(addDias(weekStart, 6))}
-            </span>
-            <button
-              onClick={() => setWeekStart((d) => addDias(d, 7))}
-              aria-label="Próxima semana"
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-muted"
-            >
-              <IconChevronRight className="size-4" />
-            </button>
-          </div>
-
-          <GrupoRadar
-            ocorrencias={radarDaSemana}
-            conclusaoPorChave={conclusaoPorChave}
-            hojeIso={hojeIso}
-            diasDaSemana={diasDaSemana}
-            abrirEdicao={abrirEdicao}
-            alternarConcluido={alternarConcluido}
-            moverEvento={moverEvento}
-          />
-
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Carregando…</p>
-          ) : (
-            <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2">
-              {diasDaSemana.map((d) => {
-                const doDia = ocorrenciasPorDiaQuadro.get(d.iso) ?? [];
-                return (
-                  <div
-                    key={d.iso}
-                    className={cn(
-                      "flex w-[78vw] shrink-0 flex-col gap-2 rounded-md border border-t-4 border-border bg-secondary/40 p-2.5 sm:w-64",
-                      d.iso === hojeIso && "border-t-primary",
-                    )}
-                  >
-                    <div className="px-0.5 text-xs font-semibold text-foreground">
-                      {d.label}{" "}
-                      <span className="font-normal text-muted-foreground">— {fmtData(d.iso)}</span>
-                    </div>
-                    {doDia.length === 0 ? (
-                      <p className="px-0.5 text-xs text-muted-foreground">Nada por aqui.</p>
-                    ) : (
-                      doDia.map((o) => {
-                        const concluido = conclusaoPorChave.has(
-                          chaveOcorrencia(o.evento.id, o.dataOcorrencia),
-                        );
-                        const atrasado =
-                          !concluido && !o.evento.aniversario && o.dataOcorrencia < hojeIso;
-                        return (
-                          <CardOcorrencia
-                            key={`${o.evento.id}-${o.dataOcorrencia}`}
-                            o={o}
-                            concluido={concluido}
-                            atrasado={atrasado}
-                            onClick={() => abrirEdicao(o.evento)}
-                            onToggleConcluido={() => alternarConcluido(o)}
-                            acaoExtra={
-                              <MenuMoverDia
-                                evento={o.evento}
-                                dataAtual={o.dataOcorrencia}
-                                diasDaSemana={diasDaSemana}
-                                onMover={(novaData) => moverEvento(o.evento, novaData)}
+                        <div className="px-0.5 text-xs font-semibold text-foreground">
+                          {d.label}{" "}
+                          <span className="font-normal text-muted-foreground">
+                            — {fmtData(d.iso)}
+                          </span>
+                        </div>
+                        {doDia.length === 0 ? (
+                          <p className="px-0.5 text-xs text-muted-foreground">Nada por aqui.</p>
+                        ) : (
+                          doDia.map((o) => {
+                            const concluido = conclusaoPorChave.has(
+                              chaveOcorrencia(o.evento.id, o.dataOcorrencia),
+                            );
+                            const atrasado =
+                              !concluido && !o.evento.aniversario && o.dataOcorrencia < hojeIso;
+                            return (
+                              <CardOcorrencia
+                                key={`${o.evento.id}-${o.dataOcorrencia}`}
+                                o={o}
+                                concluido={concluido}
+                                atrasado={atrasado}
+                                onClick={() => abrirEdicao(o.evento)}
+                                onToggleConcluido={() => alternarConcluido(o)}
+                                acaoExtra={
+                                  <MenuMoverDia
+                                    evento={o.evento}
+                                    dataAtual={o.dataOcorrencia}
+                                    diasDaSemana={diasDaSemana}
+                                    onMover={(novaData) => moverEvento(o.evento, novaData)}
+                                  />
+                                }
                               />
-                            }
-                          />
-                        );
-                      })
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </>
       )}
