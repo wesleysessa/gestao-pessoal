@@ -1226,14 +1226,14 @@ function Agenda() {
                       Pendências ({pendencias.length})
                     </div>
                     <p className="mb-2 text-xs text-muted-foreground">
-                      Passaram sem conclusão — toque pra ver o dia e reagendar.
+                      Passaram sem conclusão — toque pra editar, mudar a data ou virar prioridade.
                     </p>
                     <div className="flex flex-col gap-1.5">
                       {pendencias.map((o) => (
                         <button
                           key={chaveOcorrencia(o.evento.id, o.dataOcorrencia)}
                           type="button"
-                          onClick={() => setDiaSelecionado(o.dataOcorrencia)}
+                          onClick={() => abrirEdicao(o.evento)}
                           className="flex items-center justify-between gap-2 rounded-md bg-card px-2.5 py-1.5 text-left text-xs transition hover:bg-muted"
                         >
                           <span className="truncate font-medium text-foreground">
