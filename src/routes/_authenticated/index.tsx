@@ -5,6 +5,7 @@ import {
   IconBooks,
   IconDroplet,
   IconCalendar,
+  IconBulb,
 } from "@tabler/icons-react";
 import { Card } from "@/components/ui/card";
 import { FraseDoDia } from "@/components/frase-do-dia";
@@ -67,6 +68,14 @@ const MODULOS: Modulo[] = [
     border: "border-cyan-200 dark:border-cyan-900",
     accent: "text-cyan-600 dark:text-cyan-400",
   },
+  {
+    rotulo: "Melhorias",
+    to: "/melhorias",
+    icon: IconBulb,
+    bg: "bg-orange-50 dark:bg-orange-950/40",
+    border: "border-orange-200 dark:border-orange-900",
+    accent: "text-orange-600 dark:text-orange-400",
+  },
 ];
 
 function Home() {
@@ -77,23 +86,23 @@ function Home() {
     <div className="mx-auto max-w-2xl px-4 py-4">
       <GoogleHealthCard />
 
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="mb-5 grid grid-cols-2 gap-3">
         {MODULOS.map((m) => {
           const feita = feitaPorTo.get(m.to);
           return (
             <Link key={m.to} to={m.to}>
-              <Card className={`flex items-center justify-between gap-1.5 p-4 ${m.bg} ${m.border}`}>
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <m.icon className={`size-4 shrink-0 ${m.accent}`} stroke={2} />
-                  <span className="truncate text-sm font-semibold text-foreground">{m.rotulo}</span>
+              <Card
+                className={`flex min-h-[110px] flex-col items-center justify-end gap-2 p-5 text-center ${m.bg} ${m.border}`}
+              >
+                <m.icon className={`size-7 ${m.accent}`} stroke={2} />
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-semibold text-foreground">{m.rotulo}</span>
+                  {feita !== undefined && (
+                    <span className={`text-sm ${feita ? m.accent : "text-muted-foreground/40"}`}>
+                      {feita ? "✓" : "○"}
+                    </span>
+                  )}
                 </div>
-                {feita !== undefined && (
-                  <span
-                    className={`shrink-0 text-sm ${feita ? m.accent : "text-muted-foreground/40"}`}
-                  >
-                    {feita ? "✓" : "○"}
-                  </span>
-                )}
               </Card>
             </Link>
           );
