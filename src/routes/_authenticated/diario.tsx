@@ -5,6 +5,7 @@ import {
   IconCamera,
   IconNotebook,
   IconPhoto,
+  IconSearch,
   IconStar,
   IconTrash,
   IconX,
@@ -245,6 +246,7 @@ function Diario() {
   const [energia, setEnergia] = useState(0);
   const [novasFotos, setNovasFotos] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [busca, setBusca] = useState("");
 
   const previews = useMemo(() => novasFotos.map((f) => URL.createObjectURL(f)), [novasFotos]);
   useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
@@ -390,6 +392,14 @@ function Diario() {
 
   const aprendizados = useMemo(() => entradas.filter((e) => e.aprendizado).length, [entradas]);
 
+  const entradasFiltradas = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    if (!termo) return entradas;
+    return entradas.filter((e) =>
+      [e.titulo, e.aprendizado, e.texto].some((campo) => campo?.toLowerCase().includes(termo)),
+    );
+  }, [entradas, busca]);
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
       <SectionHeader overline="Gestão Pessoal" title="Diário" />
@@ -414,6 +424,28 @@ function Diario() {
             <strong className="text-foreground">{checkinsNaSemana}</strong> vezes na academia
             (semana)
           </span>
+        </div>
+      )}
+
+      {entradas.length > 0 && (
+        <div className="relative mb-4">
+          <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar no diário (título, aprendizado ou texto)..."
+            className="pl-8"
+          />
+          {busca && (
+            <button
+              type="button"
+              onClick={() => setBusca("")}
+              aria-label="Limpar busca"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <IconX className="size-3.5" />
+            </button>
+          )}
         </div>
       )}
 
@@ -622,9 +654,14 @@ function Diario() {
           <IconNotebook className="size-8" stroke={1.5} />
           <p className="text-sm">Seu diário está em branco. Escreva a primeira página.</p>
         </div>
+      ) : entradasFiltradas.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-card border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
+          <IconSearch className="size-8" stroke={1.5} />
+          <p className="text-sm">Nenhuma entrada encontrada com esse termo.</p>
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {entradas.map((e) => (
+          {entradasFiltradas.map((e) => (
             <Card
               key={e.id}
               onClick={() => iniciarEdicao(e)}
