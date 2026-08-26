@@ -6,6 +6,7 @@ import {
   IconCamera,
   IconPencil,
   IconPhoto,
+  IconPlus,
   IconSearch,
   IconTrash,
   IconX,
@@ -246,6 +247,8 @@ function Melhorias() {
   const [novasFotos, setNovasFotos] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [retornoAberto, setRetornoAberto] = useState<Melhoria | null>(null);
+  // Formulário começa fechado — só um botão "+".
+  const [formAberto, setFormAberto] = useState(false);
 
   const previews = useMemo(() => novasFotos.map((f) => URL.createObjectURL(f)), [novasFotos]);
   useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
@@ -263,6 +266,7 @@ function Melhorias() {
     setDescricao(m.descricao ?? "");
     setRetorno(m.retorno ?? "");
     setNovasFotos([]);
+    setFormAberto(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -273,6 +277,7 @@ function Melhorias() {
     setDescricao("");
     setRetorno("");
     setNovasFotos([]);
+    setFormAberto(false);
   }
 
   async function enviarFotosPendentes(melhoriaId: string) {
@@ -378,115 +383,126 @@ function Melhorias() {
     <div className="mx-auto max-w-2xl px-4 py-4">
       <SectionHeader overline="Gestão Pessoal" title="Melhorias" />
 
-      <Card className="mb-5">
-        <CardContent className="pt-6">
-          <div className="mb-3 space-y-1.5">
-            <Label>{editando ? "Editando" : "Nova sugestão / relatar erro"}</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {(["sugestao", "erro"] as TipoMelhoria[]).map((t) => {
-                const Icon = TIPO_ICON[t];
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setTipo(t)}
-                    className={cn(
-                      "flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition",
-                      tipo === t
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-input text-foreground",
-                    )}
-                  >
-                    <Icon className="size-4" />
-                    {TIPO_LABEL[t]}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="mb-3 space-y-1.5">
-            <Input
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-              placeholder="Título"
-            />
-          </div>
-          <div className="mb-3 space-y-1.5">
-            <Textarea
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              onPaste={handlePaste}
-              placeholder="Descreva a ideia ou o problema"
-              className="min-h-[90px]"
-            />
-          </div>
-          <div className="mb-3 space-y-1.5">
-            <Label>Retorno (opcional)</Label>
-            <Textarea
-              value={retorno}
-              onChange={(e) => setRetorno(e.target.value)}
-              onPaste={handlePaste}
-              placeholder="Explique a decisão, se já tiver uma"
-              className="min-h-[70px]"
-            />
-          </div>
+      {!formAberto && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="mb-5 gap-1.5"
+          onClick={() => setFormAberto(true)}
+        >
+          <IconPlus className="size-4" /> Nova sugestão / relatar erro
+        </Button>
+      )}
 
-          <div className="mb-3 space-y-1.5">
-            <Label>Fotos / prints (opcional — ou cole com Ctrl+V)</Label>
-            {editando && <FotosExistentes melhoriaId={editando.id} />}
-            {previews.length > 0 && (
-              <div className="mb-2 flex flex-wrap gap-2">
-                {previews.map((url, i) => (
-                  <div
-                    key={url}
-                    className="group relative size-16 overflow-hidden rounded-md bg-muted"
-                  >
-                    <img src={url} alt="" className="size-full object-cover" />
+      {formAberto && (
+        <Card className="mb-5">
+          <CardContent className="pt-6">
+            <div className="mb-3 space-y-1.5">
+              <Label>{editando ? "Editando" : "Nova sugestão / relatar erro"}</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["sugestao", "erro"] as TipoMelhoria[]).map((t) => {
+                  const Icon = TIPO_ICON[t];
+                  return (
                     <button
-                      onClick={() => setNovasFotos((fs) => fs.filter((_, idx) => idx !== i))}
-                      aria-label="Remover"
-                      className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+                      key={t}
+                      type="button"
+                      onClick={() => setTipo(t)}
+                      className={cn(
+                        "flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition",
+                        tipo === t
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-input text-foreground",
+                      )}
                     >
-                      <IconX className="size-3" />
+                      <Icon className="size-4" />
+                      {TIPO_LABEL[t]}
                     </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                const files = Array.from(e.target.files ?? []);
-                setNovasFotos((fs) => [...fs, ...files]);
-                e.target.value = "";
-              }}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <IconCamera className="size-4" /> Anexar fotos/prints
-            </Button>
-          </div>
+            </div>
+            <div className="mb-3 space-y-1.5">
+              <Input
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+                placeholder="Título"
+              />
+            </div>
+            <div className="mb-3 space-y-1.5">
+              <Textarea
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                onPaste={handlePaste}
+                placeholder="Descreva a ideia ou o problema"
+                className="min-h-[90px]"
+              />
+            </div>
+            <div className="mb-3 space-y-1.5">
+              <Label>Retorno (opcional)</Label>
+              <Textarea
+                value={retorno}
+                onChange={(e) => setRetorno(e.target.value)}
+                onPaste={handlePaste}
+                placeholder="Explique a decisão, se já tiver uma"
+                className="min-h-[70px]"
+              />
+            </div>
 
-          <div className="flex gap-2">
-            <Button onClick={salvar} disabled={salvando}>
-              {salvando ? "Salvando…" : editando ? "Salvar alterações" : "Registrar"}
-            </Button>
-            {editando && (
-              <Button variant="ghost" onClick={cancelarEdicao}>
-                Cancelar
+            <div className="mb-3 space-y-1.5">
+              <Label>Fotos / prints (opcional — ou cole com Ctrl+V)</Label>
+              {editando && <FotosExistentes melhoriaId={editando.id} />}
+              {previews.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-2">
+                  {previews.map((url, i) => (
+                    <div
+                      key={url}
+                      className="group relative size-16 overflow-hidden rounded-md bg-muted"
+                    >
+                      <img src={url} alt="" className="size-full object-cover" />
+                      <button
+                        onClick={() => setNovasFotos((fs) => fs.filter((_, idx) => idx !== i))}
+                        aria-label="Remover"
+                        className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+                      >
+                        <IconX className="size-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  setNovasFotos((fs) => [...fs, ...files]);
+                  e.target.value = "";
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <IconCamera className="size-4" /> Anexar fotos/prints
               </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={salvar} disabled={salvando}>
+                {salvando ? "Salvando…" : editando ? "Salvar alterações" : "Registrar"}
+              </Button>
+              <Button variant="ghost" onClick={cancelarEdicao}>
+                {editando ? "Cancelar" : "Fechar"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="mb-3 flex items-center gap-2 rounded-md border border-input bg-background px-3">
         <IconSearch className="size-4 shrink-0 text-muted-foreground" />
