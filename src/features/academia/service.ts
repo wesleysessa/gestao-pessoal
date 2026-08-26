@@ -20,6 +20,12 @@ export async function marcarCheckinAcademiaHoje() {
   if (error) throw error;
 }
 
+/** Marca o check-in de uma data específica (ex.: pelo bonequinho de uma entrada antiga do Diário). */
+export async function marcarCheckinAcademiaData(data: string) {
+  const { error } = await supabase.from("academia_checkins").insert({ data });
+  if (error) throw error;
+}
+
 export async function desmarcarCheckinAcademia(id: string) {
   const { error } = await supabase.from("academia_checkins").delete().eq("id", id);
   if (error) throw error;

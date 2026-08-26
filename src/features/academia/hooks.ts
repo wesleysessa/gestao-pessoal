@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   desmarcarCheckinAcademia,
   listCheckinsAcademia,
+  marcarCheckinAcademiaData,
   marcarCheckinAcademiaHoje,
 } from "./service";
 import { hoje } from "@/lib/data";
@@ -22,6 +23,14 @@ export function useMarcarCheckinAcademiaHoje() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: marcarCheckinAcademiaHoje,
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+export function useMarcarCheckinAcademiaData() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: string) => marcarCheckinAcademiaData(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });
 }

@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  IconBarbell,
   IconCamera,
   IconNotebook,
   IconPhoto,
@@ -45,7 +44,7 @@ import type { EntradaDiario, FotoDiario } from "@/features/diario/types";
 import {
   useCheckinsAcademia,
   useDesmarcarCheckinAcademia,
-  useMarcarCheckinAcademiaHoje,
+  useMarcarCheckinAcademiaData,
 } from "@/features/academia/hooks";
 
 export const Route = createFileRoute("/_authenticated/diario")({
@@ -234,9 +233,8 @@ function Diario() {
   const enviarFoto = useUploadFotoEntrada();
 
   const { data: checkinsAcademia = [] } = useCheckinsAcademia();
-  const marcarAcademia = useMarcarCheckinAcademiaHoje();
+  const marcarAcademia = useMarcarCheckinAcademiaData();
   const desmarcarAcademia = useDesmarcarCheckinAcademia();
-  const checkinAcademiaHoje = checkinsAcademia.find((c) => c.data === hoje());
 
   const [editando, setEditando] = useState<EntradaDiario | null>(null);
   const [titulo, setTitulo] = useState("");
@@ -280,13 +278,13 @@ function Diario() {
     setFormAberto(false);
   }
 
-  function alternarAcademia() {
-    if (checkinAcademiaHoje) {
-      desmarcarAcademia.mutate(checkinAcademiaHoje.id, {
-        onError: (e: Error) => toast.error(e.message),
-      });
+  /** Alterna o check-in de academia de uma data específica — usado no bonequinho de cada entrada. */
+  function alternarAcademiaData(data: string) {
+    const checkin = checkinsAcademia.find((c) => c.data === data);
+    if (checkin) {
+      desmarcarAcademia.mutate(checkin.id, { onError: (e: Error) => toast.error(e.message) });
     } else {
-      marcarAcademia.mutate(undefined, { onError: (e: Error) => toast.error(e.message) });
+      marcarAcademia.mutate(data, { onError: (e: Error) => toast.error(e.message) });
     }
   }
 
@@ -429,26 +427,9 @@ function Diario() {
             média (semana)
           </span>
         )}
-        <button
-          type="button"
-          onClick={alternarAcademia}
-          disabled={marcarAcademia.isPending || desmarcarAcademia.isPending}
-          aria-label={checkinAcademiaHoje ? "Foi à academia hoje" : "Marcar academia hoje"}
-          title={
-            checkinAcademiaHoje
-              ? "Foi à academia hoje — toque pra desmarcar"
-              : "Ainda não foi à academia hoje — toque pra marcar"
-          }
-          className={cn(
-            "flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium transition",
-            checkinAcademiaHoje
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-input text-muted-foreground/60",
-          )}
-        >
-          <IconBarbell className="size-3.5" />
-          {checkinsNaSemana}/7 na academia
-        </button>
+        <span>
+          <strong className="text-foreground">{checkinsNaSemana}</strong>/7 na academia (semana)
+        </span>
       </div>
 
       {entradas.length > 0 && (
@@ -699,11 +680,31 @@ function Diario() {
                     )}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    {diasComAcademia.has(e.data) && (
-                      <span className="text-base" title="Foi à academia">
-                        🏋️
-                      </span>
-                    )}
+                    <button
+                      type="button"
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        alternarAcademiaData(e.data);
+                      }}
+                      aria-label={
+                        diasComAcademia.has(e.data)
+                          ? "Foi à academia nesse dia — toque pra desmarcar"
+                          : "Não foi à academia nesse dia — toque pra marcar"
+                      }
+                      title={
+                        diasComAcademia.has(e.data)
+                          ? "Foi à academia nesse dia — toque pra desmarcar"
+                          : "Não foi à academia nesse dia — toque pra marcar"
+                      }
+                      className={cn(
+                        "text-base transition",
+                        diasComAcademia.has(e.data)
+                          ? "opacity-100"
+                          : "opacity-25 grayscale hover:opacity-60",
+                      )}
+                    >
+                      🏋️
+                    </button>
                     {e.aprendizado && (
                       <IconStar
                         className="size-4 fill-amber-400 text-amber-400"
