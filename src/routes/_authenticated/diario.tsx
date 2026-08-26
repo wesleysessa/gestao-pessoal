@@ -410,28 +410,46 @@ function Diario() {
     <div className="mx-auto max-w-2xl px-4 py-4">
       <SectionHeader overline="Gestão Pessoal" title="Diário" />
 
-      {entradas.length > 0 && (
-        <div className="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
-          <span>
-            <strong className="text-foreground">{entradas.length}</strong>{" "}
-            {entradas.length === 1 ? "entrada" : "entradas"}
-          </span>
-          <span>
-            <strong className="text-foreground">{aprendizados}</strong>{" "}
-            {aprendizados === 1 ? "aprendizado" : "aprendizados"} 🌟
-          </span>
-          {mediaEnergiaSemana != null && (
+      <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground">
+        {entradas.length > 0 && (
+          <>
             <span>
-              <strong className="text-foreground">{mediaEnergiaSemana.toFixed(1)}</strong> energia
-              média (semana)
+              <strong className="text-foreground">{entradas.length}</strong>{" "}
+              {entradas.length === 1 ? "entrada" : "entradas"}
             </span>
-          )}
+            <span>
+              <strong className="text-foreground">{aprendizados}</strong>{" "}
+              {aprendizados === 1 ? "aprendizado" : "aprendizados"} 🌟
+            </span>
+          </>
+        )}
+        {mediaEnergiaSemana != null && (
           <span>
-            <strong className="text-foreground">{checkinsNaSemana}</strong> vezes na academia
-            (semana)
+            <strong className="text-foreground">{mediaEnergiaSemana.toFixed(1)}</strong> energia
+            média (semana)
           </span>
-        </div>
-      )}
+        )}
+        <button
+          type="button"
+          onClick={alternarAcademia}
+          disabled={marcarAcademia.isPending || desmarcarAcademia.isPending}
+          aria-label={checkinAcademiaHoje ? "Foi à academia hoje" : "Marcar academia hoje"}
+          title={
+            checkinAcademiaHoje
+              ? "Foi à academia hoje — toque pra desmarcar"
+              : "Ainda não foi à academia hoje — toque pra marcar"
+          }
+          className={cn(
+            "flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium transition",
+            checkinAcademiaHoje
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-input text-muted-foreground/60",
+          )}
+        >
+          <IconBarbell className="size-3.5" />
+          {checkinsNaSemana}/7 na academia
+        </button>
+      </div>
 
       {entradas.length > 0 && (
         <div className="relative mb-4">
@@ -563,20 +581,6 @@ function Diario() {
           </CardContent>
         </Card>
       )}
-
-      <Card className="mb-5">
-        <CardContent className="flex items-center justify-between gap-2 pt-6">
-          <Button
-            variant={checkinAcademiaHoje ? "default" : "outline"}
-            onClick={alternarAcademia}
-            disabled={marcarAcademia.isPending || desmarcarAcademia.isPending}
-          >
-            <IconBarbell className="size-4" />
-            {checkinAcademiaHoje ? "Fui à academia hoje ✓" : "Check Academia"}
-          </Button>
-          <span className="text-xs text-muted-foreground">({checkinsNaSemana}/7)</span>
-        </CardContent>
-      </Card>
 
       {mediaDoMes != null && (
         <Card className="mb-5">
