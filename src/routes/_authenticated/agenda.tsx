@@ -42,6 +42,7 @@ import {
 import { cn } from "@/lib/utils";
 import { addDias, fmtData, hoje, segundaDaSemana } from "@/lib/data";
 import { useSignedUrl } from "@/lib/use-signed-url";
+import { supabase } from "@/integrations/supabase/client";
 import { useCurrentProfile } from "@/features/auth/use-current-profile";
 import {
   useConclusoes,
@@ -104,6 +105,21 @@ function chaveOcorrencia(eventoId: string, data: string): string {
   return `${eventoId}|${data}`;
 }
 
+/**
+ * Replica (best-effort) um evento profissional pro Home & Tech — nunca
+ * bloqueia a ação principal do usuário, só avisa se falhar.
+ */
+function sincronizarComHT(body: {
+  acao: "upsert" | "excluir" | "concluir" | "desconcluir";
+  eventoId?: string;
+  compromissoHtId?: string | null;
+}) {
+  if (!body.eventoId && !body.compromissoHtId) return;
+  supabase.functions.invoke("sync-compromisso-ht", { body }).then(({ error }) => {
+    if (error) toast.error(`Falha ao sincronizar com o Home & Tech: ${error.message}`);
+  });
+}
+
 function horarioOcorrencia(o: Ocorrencia): string {
   if (o.evento.aniversario) return "Aniversário 🎂";
   if (o.evento.dia_inteiro) return "Dia inteiro";
@@ -130,6 +146,7 @@ type FormValues = {
   aniversario: boolean;
   destaque: boolean;
   radar: boolean;
+  profissional: boolean;
 };
 
 function valoresVazios(dataPadrao: string): FormValues {
@@ -149,6 +166,7 @@ function valoresVazios(dataPadrao: string): FormValues {
     aniversario: false,
     destaque: false,
     radar: false,
+    profissional: false,
   };
 }
 
@@ -169,6 +187,7 @@ function valoresDoEvento(e: Evento): FormValues {
     aniversario: e.aniversario,
     destaque: e.destaque,
     radar: e.radar,
+    profissional: e.escopo === "profissional",
   };
 }
 
@@ -382,6 +401,7 @@ function EventoDialog({
       aniversario: v.aniversario,
       destaque: v.destaque,
       radar: v.radar,
+      escopo: v.profissional ? "profissional" : "pessoal",
     };
     const onErr = (e: Error) => toast.error(e.message);
     if (evento) {
@@ -390,6 +410,7 @@ function EventoDialog({
         {
           onSuccess: async () => {
             await enviarFotosPendentes(evento.id);
+            sincronizarComHT({ acao: "upsert", eventoId: evento.id });
             onOpenChange(false);
           },
           onError: onErr,
@@ -399,6 +420,7 @@ function EventoDialog({
       criar.mutate(input, {
         onSuccess: async (novo) => {
           await enviarFotosPendentes(novo.id);
+          sincronizarComHT({ acao: "upsert", eventoId: novo.id });
           onOpenChange(false);
         },
         onError: onErr,
@@ -408,6 +430,9 @@ function EventoDialog({
 
   function excluir() {
     if (!evento) return;
+    if (evento.compromisso_ht_id) {
+      sincronizarComHT({ acao: "excluir", compromissoHtId: evento.compromisso_ht_id });
+    }
     remover.mutate(evento.id, {
       onSuccess: () => onOpenChange(false),
       onError: (e: Error) => toast.error(e.message),
@@ -636,6 +661,19 @@ function EventoDialog({
               👁️ Radar (fica no grupo fixo do Quadro da Semana)
             </button>
 
+            <button
+              type="button"
+              onClick={() => set("profissional", !v.profissional)}
+              className={cn(
+                "flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition",
+                v.profissional
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-input text-foreground",
+              )}
+            >
+              💼 Profissional (replica na Agenda Comercial do Home & Tech)
+            </button>
+
             <div className="space-y-1.5">
               <Label>Lembrete</Label>
               <Select
@@ -786,6 +824,11 @@ function CardOcorrencia({
           <div className="flex items-center gap-1 truncate text-sm font-semibold text-foreground">
             {o.evento.destaque && <span className="shrink-0">🔝</span>}
             {o.evento.radar && <span className="shrink-0">👁️</span>}
+            {o.evento.escopo === "profissional" && (
+              <span className="shrink-0" title="Profissional — replicado no Home & Tech">
+                💼
+              </span>
+            )}
             <span className={cn("truncate", concluido && "text-muted-foreground line-through")}>
               {o.evento.titulo}
             </span>
@@ -947,11 +990,13 @@ function Agenda() {
     const idExistente = conclusaoPorChave.get(chaveOcorrencia(o.evento.id, o.dataOcorrencia));
     if (idExistente) {
       desmarcarConcluido.mutate(idExistente, { onError: (e: Error) => toast.error(e.message) });
+      sincronizarComHT({ acao: "desconcluir", compromissoHtId: o.evento.compromisso_ht_id });
     } else {
       marcarConcluido.mutate(
         { eventoId: o.evento.id, data: o.dataOcorrencia },
         { onError: (e: Error) => toast.error(e.message) },
       );
+      sincronizarComHT({ acao: "concluir", compromissoHtId: o.evento.compromisso_ht_id });
     }
   }
 
@@ -973,11 +1018,15 @@ function Agenda() {
       aniversario: evento.aniversario,
       destaque: evento.destaque,
       radar: evento.radar,
+      escopo: evento.escopo,
     };
     atualizarEvento.mutate(
       { id: evento.id, input },
       {
-        onSuccess: () => toast.success(`"${evento.titulo}" movido para ${fmtData(novaData)}`),
+        onSuccess: () => {
+          toast.success(`"${evento.titulo}" movido para ${fmtData(novaData)}`);
+          sincronizarComHT({ acao: "upsert", eventoId: evento.id });
+        },
         onError: (e: Error) => toast.error(e.message),
       },
     );

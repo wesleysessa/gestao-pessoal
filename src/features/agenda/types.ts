@@ -19,7 +19,11 @@ export type NovoEvento = Pick<
   | "aniversario"
   | "destaque"
   | "radar"
+  | "escopo"
 >;
+
+/** "profissional" replica como compromisso na Agenda Comercial do Home & Tech. */
+export type EscopoEvento = "pessoal" | "profissional";
 
 /** Uma ocorrência materializada de um evento numa data específica (recorrência já expandida). */
 export type Ocorrencia = {

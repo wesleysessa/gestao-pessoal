@@ -75,6 +75,7 @@ function DialogVirarCompromisso({
       aniversario: false,
       destaque: false,
       radar: false,
+      escopo: "pessoal",
     };
     criarEvento.mutate(input, {
       onSuccess: () => {

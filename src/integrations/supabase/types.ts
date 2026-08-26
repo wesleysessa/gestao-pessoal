@@ -197,6 +197,8 @@ export type Database = {
           aniversario: boolean;
           destaque: boolean;
           radar: boolean;
+          escopo: string;
+          compromisso_ht_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -218,6 +220,8 @@ export type Database = {
           aniversario?: boolean;
           destaque?: boolean;
           radar?: boolean;
+          escopo?: string;
+          compromisso_ht_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -239,6 +243,8 @@ export type Database = {
           aniversario?: boolean;
           destaque?: boolean;
           radar?: boolean;
+          escopo?: string;
+          compromisso_ht_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
