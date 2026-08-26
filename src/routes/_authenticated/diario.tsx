@@ -5,6 +5,7 @@ import {
   IconCamera,
   IconNotebook,
   IconPhoto,
+  IconPlus,
   IconSearch,
   IconStar,
   IconTrash,
@@ -247,6 +248,9 @@ function Diario() {
   const [novasFotos, setNovasFotos] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [busca, setBusca] = useState("");
+  // Formulário começa fechado — só ocupa a tela quando você realmente vai
+  // escrever, e fecha sozinho depois de salvar.
+  const [formAberto, setFormAberto] = useState(false);
 
   const previews = useMemo(() => novasFotos.map((f) => URL.createObjectURL(f)), [novasFotos]);
   useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
@@ -260,6 +264,7 @@ function Diario() {
     setHumor(e.humor ?? 0);
     setEnergia(e.energia ?? 0);
     setNovasFotos([]);
+    setFormAberto(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -272,6 +277,7 @@ function Diario() {
     setHumor(0);
     setEnergia(0);
     setNovasFotos([]);
+    setFormAberto(false);
   }
 
   function alternarAcademia() {
@@ -449,105 +455,114 @@ function Diario() {
         </div>
       )}
 
-      <Card className="mb-5">
-        <CardContent className="pt-6">
-          <div className="mb-3 space-y-1.5">
-            <Label>
-              {editando
-                ? `Editando entrada de ${fmtData(editando.data)}`
-                : `Entrada de ${fmtData(hoje())}`}
-            </Label>
-            <Input
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-              placeholder="Título (opcional)"
-            />
-          </div>
-          <div className="mb-3 space-y-1.5">
-            <Input
-              value={aprendizado}
-              onChange={(e) => setAprendizado(e.target.value)}
-              placeholder="Aprendizado ou curiosidade de hoje (opcional — ganha uma estrela)"
-            />
-          </div>
-          <div className="mb-3 space-y-1.5">
-            <Textarea
-              value={texto}
-              onChange={(e) => setTexto(e.target.value)}
-              placeholder="O que marcou o seu dia?"
-              className="min-h-[120px]"
-            />
-          </div>
+      {!formAberto ? (
+        <Card
+          className="mb-5 cursor-pointer transition hover:border-muted-foreground/40"
+          onClick={() => setFormAberto(true)}
+        >
+          <CardContent className="flex items-center gap-2 py-4 text-sm font-medium text-muted-foreground">
+            <IconPlus className="size-4" /> Nova entrada
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="mb-5">
+          <CardContent className="pt-6">
+            <div className="mb-3 space-y-1.5">
+              <Label>
+                {editando
+                  ? `Editando entrada de ${fmtData(editando.data)}`
+                  : `Entrada de ${fmtData(hoje())}`}
+              </Label>
+              <Input
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+                placeholder="Título (opcional)"
+              />
+            </div>
+            <div className="mb-3 space-y-1.5">
+              <Input
+                value={aprendizado}
+                onChange={(e) => setAprendizado(e.target.value)}
+                placeholder="Aprendizado ou curiosidade de hoje (opcional — ganha uma estrela)"
+              />
+            </div>
+            <div className="mb-3 space-y-1.5">
+              <Textarea
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                placeholder="O que marcou o seu dia?"
+                className="min-h-[120px]"
+              />
+            </div>
 
-          <div className="mb-3.5 space-y-1.5">
-            <Label>Humor (opcional)</Label>
-            <Escala valor={humor} onEscolher={setHumor} rotulos={HUMORES} />
-          </div>
-          <div className="mb-3.5 space-y-1.5">
-            <Label>Energia (1 = esgotado · 5 = a mil, opcional)</Label>
-            <Escala valor={energia} onEscolher={setEnergia} />
-          </div>
-          <div className="mb-3 space-y-1.5">
-            <Label>Nota de produtividade (opcional)</Label>
-            <StarRating value={nota} onChange={setNota} size={24} />
-          </div>
+            <div className="mb-3.5 space-y-1.5">
+              <Label>Humor (opcional)</Label>
+              <Escala valor={humor} onEscolher={setHumor} rotulos={HUMORES} />
+            </div>
+            <div className="mb-3.5 space-y-1.5">
+              <Label>Energia (1 = esgotado · 5 = a mil, opcional)</Label>
+              <Escala valor={energia} onEscolher={setEnergia} />
+            </div>
+            <div className="mb-3 space-y-1.5">
+              <Label>Nota de produtividade (opcional)</Label>
+              <StarRating value={nota} onChange={setNota} size={24} />
+            </div>
 
-          <div className="mb-3 space-y-1.5">
-            <Label>Fotos</Label>
-            {editando && <FotosExistentes entradaId={editando.id} />}
-            {previews.length > 0 && (
-              <div className="mb-2 flex flex-wrap gap-2">
-                {previews.map((url, i) => (
-                  <div
-                    key={url}
-                    className="group relative size-16 overflow-hidden rounded-md bg-muted"
-                  >
-                    <img src={url} alt="" className="size-full object-cover" />
-                    <button
-                      onClick={() => setNovasFotos((fs) => fs.filter((_, idx) => idx !== i))}
-                      aria-label="Remover"
-                      className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+            <div className="mb-3 space-y-1.5">
+              <Label>Fotos</Label>
+              {editando && <FotosExistentes entradaId={editando.id} />}
+              {previews.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-2">
+                  {previews.map((url, i) => (
+                    <div
+                      key={url}
+                      className="group relative size-16 overflow-hidden rounded-md bg-muted"
                     >
-                      <IconX className="size-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                const files = Array.from(e.target.files ?? []);
-                setNovasFotos((fs) => [...fs, ...files]);
-                e.target.value = "";
-              }}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <IconCamera className="size-4" /> Adicionar fotos
-            </Button>
-          </div>
-
-          <div className="flex gap-2">
-            <Button onClick={salvar} disabled={salvando}>
-              {salvando ? "Salvando…" : editando ? "Salvar alterações" : "Guardar entrada"}
-            </Button>
-            {editando && (
-              <Button variant="ghost" onClick={cancelarEdicao}>
-                Cancelar
+                      <img src={url} alt="" className="size-full object-cover" />
+                      <button
+                        onClick={() => setNovasFotos((fs) => fs.filter((_, idx) => idx !== i))}
+                        aria-label="Remover"
+                        className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition group-hover:opacity-100"
+                      >
+                        <IconX className="size-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  setNovasFotos((fs) => [...fs, ...files]);
+                  e.target.value = "";
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <IconCamera className="size-4" /> Adicionar fotos
               </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={salvar} disabled={salvando}>
+                {salvando ? "Salvando…" : editando ? "Salvar alterações" : "Guardar entrada"}
+              </Button>
+              <Button variant="ghost" onClick={cancelarEdicao}>
+                {editando ? "Cancelar" : "Fechar"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="mb-5">
         <CardContent className="flex items-center justify-between gap-2 pt-6">
