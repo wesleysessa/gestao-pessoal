@@ -453,6 +453,7 @@ export type Database = {
           autor: string | null;
           nota: number;
           comentario: string | null;
+          capa_path: string | null;
           data: string;
           created_at: string;
           updated_at: string;
@@ -464,6 +465,7 @@ export type Database = {
           autor?: string | null;
           nota?: number;
           comentario?: string | null;
+          capa_path?: string | null;
           data?: string;
           created_at?: string;
           updated_at?: string;
@@ -475,9 +477,43 @@ export type Database = {
           autor?: string | null;
           nota?: number;
           comentario?: string | null;
+          capa_path?: string | null;
           data?: string;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      livros_entradas: {
+        Row: {
+          id: string;
+          user_id: string;
+          livro_id: string;
+          data: string;
+          anotacoes: string | null;
+          nota: number | null;
+          paginas: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          livro_id: string;
+          data?: string;
+          anotacoes?: string | null;
+          nota?: number | null;
+          paginas?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          livro_id?: string;
+          data?: string;
+          anotacoes?: string | null;
+          nota?: number | null;
+          paginas?: number | null;
+          created_at?: string;
         };
         Relationships: [];
       };

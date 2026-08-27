@@ -4,7 +4,7 @@ import { syncStreak } from "./service";
 import { dataLocalDe, hoje } from "@/lib/data";
 import { useVocabulario } from "@/features/vocabulario/hooks";
 import { useDiario } from "@/features/diario/hooks";
-import { useLivros } from "@/features/livros/hooks";
+import { useEntradasLivros, useLivros } from "@/features/livros/hooks";
 import { useMelhorias } from "@/features/melhorias/hooks";
 import { useAgua, useMetasAgua } from "@/features/agua/hooks";
 import { metaVigenteEm } from "@/features/agua/service";
@@ -28,6 +28,7 @@ export function useStreakResumo() {
   const { data: vocab = [] } = useVocabulario();
   const { data: diario = [] } = useDiario();
   const { data: livros = [] } = useLivros();
+  const { data: entradasLivros = [] } = useEntradasLivros();
   const { data: melhorias = [] } = useMelhorias();
   const { data: registrosAgua = [] } = useAgua();
   const { data: metasAgua = [] } = useMetasAgua();
@@ -74,10 +75,10 @@ export function useStreakResumo() {
     },
     {
       rotulo: "Livros",
-      // conta tanto um livro novo quanto editar algo num já cadastrado.
-      feita: livros.some((l) => l.data === hoje() || dataLocalDe(l.updated_at) === hoje()),
+      // conta tanto cadastrar um livro novo quanto registrar uma leitura nele.
+      feita: livros.some((l) => l.data === hoje()) || entradasLivros.some((e) => e.data === hoje()),
       to: "/livros",
-      acao: "Registrar",
+      acao: "Registrar leitura",
     },
     {
       rotulo: "Hidratação",
@@ -105,12 +106,13 @@ export function useStreakResumo() {
       let n = 0;
       if (vocab.some((v) => v.data === dataISO)) n++;
       if (diario.some((e) => e.data === dataISO)) n++;
-      if (livros.some((l) => l.data === dataISO || dataLocalDe(l.updated_at) === dataISO)) n++;
+      if (livros.some((l) => l.data === dataISO) || entradasLivros.some((e) => e.data === dataISO))
+        n++;
       if (metaAguaBatidaEm(dataISO)) n++;
       if (melhoriasNoDia(dataISO) >= MELHORIAS_META_DIA) n++;
       return n >= META_DIARIA;
     };
-  }, [vocab, diario, livros, metaAguaBatidaEm, melhoriasNoDia]);
+  }, [vocab, diario, livros, entradasLivros, metaAguaBatidaEm, melhoriasNoDia]);
 
   return { streak, tarefas, feitasHoje, streakExibido, diaCumpriuMeta, META_DIARIA };
 }
