@@ -16,6 +16,7 @@ export type Database = {
           cor: string;
           concluida: boolean;
           ordem: number;
+          escopo: string;
           created_at: string;
           updated_at: string;
         };
@@ -27,6 +28,7 @@ export type Database = {
           cor?: string;
           concluida?: boolean;
           ordem?: number;
+          escopo?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -38,6 +40,7 @@ export type Database = {
           cor?: string;
           concluida?: boolean;
           ordem?: number;
+          escopo?: string;
           created_at?: string;
           updated_at?: string;
         };

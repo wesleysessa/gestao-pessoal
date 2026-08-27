@@ -1,12 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
+  IconBriefcase,
   IconCalendar,
   IconCalendarPlus,
   IconChevronDown,
   IconChevronUp,
   IconFlag,
+  IconHome,
   IconPencil,
+  IconPlus,
   IconTrash,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
@@ -30,6 +33,7 @@ import {
   CORES_PRIORIDADE,
   CORES_PRIORIDADE_ORDEM,
   type CorPrioridade,
+  type EscopoPrioridade,
   type Prioridade,
 } from "@/features/prioridades/types";
 import { useCreateEvento } from "@/features/agenda/hooks";
@@ -75,7 +79,7 @@ function DialogVirarCompromisso({
       aniversario: false,
       destaque: false,
       radar: false,
-      escopo: "pessoal",
+      escopo: prioridade.escopo,
     };
     criarEvento.mutate(input, {
       onSuccess: () => {
@@ -238,13 +242,19 @@ function Prioridades() {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [cor, setCor] = useState<CorPrioridade>("amarelo");
+  const [escopo, setEscopo] = useState<EscopoPrioridade>("profissional");
   const [virandoCompromisso, setVirandoCompromisso] = useState<Prioridade | null>(null);
+  // Formulário começa fechado — só um botão "+".
+  const [formAberto, setFormAberto] = useState(false);
+  const [escopoFiltro, setEscopoFiltro] = useState<"todos" | EscopoPrioridade>("todos");
 
   function iniciarEdicao(p: Prioridade) {
     setEditando(p);
     setTitulo(p.titulo);
     setDescricao(p.descricao ?? "");
     setCor(p.cor as CorPrioridade);
+    setEscopo((p.escopo as EscopoPrioridade) ?? "profissional");
+    setFormAberto(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -253,6 +263,8 @@ function Prioridades() {
     setTitulo("");
     setDescricao("");
     setCor("amarelo");
+    setEscopo("profissional");
+    setFormAberto(false);
   }
 
   function salvar() {
@@ -264,6 +276,7 @@ function Prioridades() {
       titulo: titulo.trim(),
       descricao: descricao.trim() || null,
       cor,
+      escopo,
       concluida: editando?.concluida ?? false,
       // item novo entra no fim do grupo da cor escolhida
       ordem: editando ? editando.ordem : itens.filter((i) => i.cor === cor).length,
@@ -303,13 +316,18 @@ function Prioridades() {
 
   const salvando = criar.isPending || atualizar.isPending;
 
+  const itensFiltrados = useMemo(
+    () => (escopoFiltro === "todos" ? itens : itens.filter((i) => i.escopo === escopoFiltro)),
+    [itens, escopoFiltro],
+  );
+
   /** Itens não concluídos de uma cor, na ordem manual — é o que "mover" reorganiza. */
   const grupoDaCor = (c: CorPrioridade) =>
-    itens.filter((i) => !i.concluida && i.cor === c).sort((a, b) => a.ordem - b.ordem);
+    itensFiltrados.filter((i) => !i.concluida && i.cor === c).sort((a, b) => a.ordem - b.ordem);
 
   const concluidos = useMemo(
-    () => [...itens].filter((i) => i.concluida).sort((a, b) => a.ordem - b.ordem),
-    [itens],
+    () => [...itensFiltrados].filter((i) => i.concluida).sort((a, b) => a.ordem - b.ordem),
+    [itensFiltrados],
   );
 
   function mover(p: Prioridade, direcao: "cima" | "baixo") {
@@ -338,65 +356,130 @@ function Prioridades() {
         </Link>
       </div>
 
-      <Card className="mb-5">
-        <CardContent className="pt-6">
-          <Label className="mb-3 block">{editando ? "Editando" : "Novo item"}</Label>
-          <div className="mb-3 space-y-1.5">
-            <Input
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-              placeholder="ex.: Renovar contrato com fornecedor"
-            />
-          </div>
-          <div className="mb-3 space-y-1.5">
-            <Textarea
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              placeholder="Detalhes (opcional)"
-              className="min-h-[70px]"
-            />
-          </div>
-          <div className="mb-3 space-y-1.5">
-            <Label>Prioridade</Label>
-            <div className="flex gap-2">
-              {CORES_PRIORIDADE_ORDEM.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setCor(c)}
-                  title={CORES_PRIORIDADE[c].label}
-                  className={cn(
-                    "flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition",
-                    cor === c
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-input text-foreground",
-                  )}
-                >
-                  <span className={cn("size-3 rounded-full", CORES_PRIORIDADE[c].dot)} />
-                  {CORES_PRIORIDADE[c].label.split(" — ")[0]}
-                </button>
-              ))}
+      {!formAberto && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="mb-5 gap-1.5"
+          onClick={() => setFormAberto(true)}
+        >
+          <IconPlus className="size-4" /> Novo item
+        </Button>
+      )}
+
+      {formAberto && (
+        <Card className="mb-5">
+          <CardContent className="pt-6">
+            <Label className="mb-3 block">{editando ? "Editando" : "Novo item"}</Label>
+            <div className="mb-3 space-y-1.5">
+              <Input
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+                placeholder="ex.: Renovar contrato com fornecedor"
+              />
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={salvar} disabled={salvando}>
-              {salvando ? "Salvando…" : editando ? "Salvar alterações" : "Adicionar"}
-            </Button>
-            {editando && (
-              <Button variant="ghost" onClick={cancelarEdicao}>
-                Cancelar
+            <div className="mb-3 space-y-1.5">
+              <Textarea
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder="Detalhes (opcional)"
+                className="min-h-[70px]"
+              />
+            </div>
+            <div className="mb-3 space-y-1.5">
+              <Label>Prioridade</Label>
+              <div className="flex gap-2">
+                {CORES_PRIORIDADE_ORDEM.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCor(c)}
+                    title={CORES_PRIORIDADE[c].label}
+                    className={cn(
+                      "flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition",
+                      cor === c
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-input text-foreground",
+                    )}
+                  >
+                    <span className={cn("size-3 rounded-full", CORES_PRIORIDADE[c].dot)} />
+                    {CORES_PRIORIDADE[c].label.split(" — ")[0]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mb-3 space-y-1.5">
+              <Label>Escopo</Label>
+              <div className="flex gap-2">
+                {(
+                  [
+                    ["pessoal", "Pessoal", IconHome],
+                    ["profissional", "Profissional", IconBriefcase],
+                  ] as [EscopoPrioridade, string, typeof IconHome][]
+                ).map(([valor, rotulo, Icon]) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    onClick={() => setEscopo(valor)}
+                    className={cn(
+                      "flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition",
+                      escopo === valor
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-input text-foreground",
+                    )}
+                  >
+                    <Icon className="size-4" />
+                    {rotulo}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={salvar} disabled={salvando}>
+                {salvando ? "Salvando…" : editando ? "Salvar alterações" : "Adicionar"}
               </Button>
+              <Button variant="ghost" onClick={cancelarEdicao}>
+                {editando ? "Cancelar" : "Fechar"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="mb-4 flex gap-2">
+        {(
+          [
+            ["todos", "Todos"],
+            ["pessoal", "Pessoal"],
+            ["profissional", "Profissional"],
+          ] as [typeof escopoFiltro, string][]
+        ).map(([valor, rotulo]) => (
+          <button
+            key={valor}
+            type="button"
+            onClick={() => setEscopoFiltro(valor)}
+            className={cn(
+              "rounded-full border px-3 py-1.5 text-xs font-semibold transition",
+              escopoFiltro === valor
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-input bg-transparent text-foreground",
             )}
-          </div>
-        </CardContent>
-      </Card>
+          >
+            {rotulo}
+          </button>
+        ))}
+      </div>
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
-      ) : itens.length === 0 ? (
+      ) : itensFiltrados.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-card border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
           <IconFlag className="size-8" stroke={1.5} />
-          <p className="text-sm">Nada por aqui ainda. Registre o primeiro item acima.</p>
+          <p className="text-sm">
+            {itens.length === 0
+              ? 'Nada por aqui ainda. Toque em "Novo item" pra registrar o primeiro.'
+              : "Nenhum item nesse escopo."}
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">

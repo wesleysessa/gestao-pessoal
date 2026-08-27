@@ -448,6 +448,7 @@ function EventoDialog({
         descricao: evento.descricao,
         cor: "amarelo",
         concluida: false,
+        escopo: evento.escopo,
       },
       {
         onSuccess: () => {

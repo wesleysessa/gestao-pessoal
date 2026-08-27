@@ -15,6 +15,7 @@ import {
   IconPin,
   IconPinFilled,
   IconBarbell,
+  IconDiamond,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
@@ -79,7 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [calendarioAberto, setCalendarioAberto] = useState(false);
   const [fixados, setFixados] = useState<string[]>(carregarFixados);
   const { isStandalone } = usePwaInstall();
-  const { streakExibido } = useStreakResumo();
+  const { streak, streakExibido } = useStreakResumo();
   const { progresso: hidratacaoProgresso } = useHidratacaoHoje();
   const foiAcademiaHoje = useFoiAcademiaHoje();
 
@@ -305,6 +306,26 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="text-sm font-semibold text-foreground">{hidratacaoProgresso}%</span>
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => setCalendarioAberto(true)}
+            aria-label="Cristais"
+            title="Cristais — a cada 14 dias seguidos com a chama acesa, ganha um"
+            className="flex shrink-0 items-center gap-1 rounded-full bg-secondary px-2.5 py-1 transition hover:bg-muted"
+          >
+            <IconDiamond
+              className={cn(
+                "size-4",
+                (streak?.cristais_disponiveis ?? 0) > 0
+                  ? "fill-cyan-500 text-cyan-500"
+                  : "text-muted-foreground/40",
+              )}
+            />
+            <span className="text-sm font-semibold text-foreground">
+              {streak?.cristais_disponiveis ?? 0}
+            </span>
+          </button>
 
           <button
             type="button"
