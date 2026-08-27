@@ -1,10 +1,21 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { Outlet, Link, createRootRouteWithContext, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallPrompt } from "@/components/install-prompt";
+import { OfflineBanner } from "@/components/offline-banner";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeProvider } from "@/features/theme/theme-provider";
+
+// Guardado em localStorage — é o que permite abrir o app offline e ver os
+// últimos dados carregados. `typeof window` protege contra rodar isso fora
+// do navegador (ex.: durante o build).
+const persister =
+  typeof window !== "undefined"
+    ? createSyncStoragePersister({ storage: window.localStorage, key: "gp-query-cache" })
+    : undefined;
 
 function NotFoundComponent() {
   return (
@@ -85,11 +96,22 @@ function RootComponent() {
 
   return (
     <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          // Se chegou até aqui renderizando, é porque está no navegador —
+          // por isso o persister (só nulo fora do browser) já existe.
+          persister: persister!,
+          // Não reidrata dado com mais de 24h — melhor mostrar "carregando"
+          // do que informação velha demais.
+          maxAge: 24 * 60 * 60 * 1000,
+        }}
+      >
+        <OfflineBanner />
         <Outlet />
         <InstallPrompt />
         <Toaster richColors position="top-center" />
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </ThemeProvider>
   );
 }
