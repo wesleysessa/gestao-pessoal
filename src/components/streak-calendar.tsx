@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { IconChevronLeft, IconChevronRight, IconFlame, IconSnowflake } from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight, IconDiamond, IconFlame } from "@tabler/icons-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useStreakResumo } from "@/features/streak/hooks";
@@ -69,11 +69,14 @@ export function StreakCalendarDialog({
           </div>
           <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
             <span>Recorde: {streak?.recorde ?? 0}</span>
-            {!!streak?.congelamentos_disponiveis && (
-              <span className="flex items-center gap-1">
-                <IconSnowflake className="size-3.5" />
-                {streak.congelamentos_disponiveis} congelamento
-                {streak.congelamentos_disponiveis > 1 ? "s" : ""}
+            {!!streak?.cristais_disponiveis && (
+              <span
+                className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400"
+                title="Cada cristal perdoa um dia que falhar a meta, sem apagar a chama"
+              >
+                <IconDiamond className="size-3.5" />
+                {streak.cristais_disponiveis} cristal
+                {streak.cristais_disponiveis > 1 ? "is" : ""}
               </span>
             )}
           </div>

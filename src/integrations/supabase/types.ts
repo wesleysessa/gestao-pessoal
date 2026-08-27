@@ -484,7 +484,7 @@ export type Database = {
           user_id: string;
           streak_atual: number;
           recorde: number;
-          congelamentos_disponiveis: number;
+          cristais_disponiveis: number;
           ultimo_dia_processado: string | null;
           updated_at: string;
         };
@@ -493,7 +493,7 @@ export type Database = {
           user_id?: string;
           streak_atual?: number;
           recorde?: number;
-          congelamentos_disponiveis?: number;
+          cristais_disponiveis?: number;
           ultimo_dia_processado?: string | null;
           updated_at?: string;
         };
@@ -502,7 +502,7 @@ export type Database = {
           user_id?: string;
           streak_atual?: number;
           recorde?: number;
-          congelamentos_disponiveis?: number;
+          cristais_disponiveis?: number;
           ultimo_dia_processado?: string | null;
           updated_at?: string;
         };
@@ -607,7 +607,7 @@ export type Database = {
           user_id: string;
           streak_atual: number;
           recorde: number;
-          congelamentos_disponiveis: number;
+          cristais_disponiveis: number;
           ultimo_dia_processado: string | null;
           updated_at: string;
         };
