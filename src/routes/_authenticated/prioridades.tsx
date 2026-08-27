@@ -321,6 +321,15 @@ function Prioridades() {
     [itens, escopoFiltro],
   );
 
+  const contagemEscopo = useMemo(
+    () => ({
+      todos: itens.length,
+      pessoal: itens.filter((i) => i.escopo === "pessoal").length,
+      profissional: itens.filter((i) => i.escopo === "profissional").length,
+    }),
+    [itens],
+  );
+
   /** Itens não concluídos de uma cor, na ordem manual — é o que "mover" reorganiza. */
   const grupoDaCor = (c: CorPrioridade) =>
     itensFiltrados.filter((i) => !i.concluida && i.cor === c).sort((a, b) => a.ordem - b.ordem);
@@ -465,7 +474,7 @@ function Prioridades() {
                 : "border-input bg-transparent text-foreground",
             )}
           >
-            {rotulo}
+            {rotulo} ({contagemEscopo[valor]})
           </button>
         ))}
       </div>
