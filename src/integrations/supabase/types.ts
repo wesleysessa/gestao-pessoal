@@ -634,6 +634,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      modulos_home: {
+        Row: {
+          user_id: string;
+          rota: string;
+          posicao: number;
+          updated_at: string;
+        };
+        Insert: {
+          user_id?: string;
+          rota: string;
+          posicao: number;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          rota?: string;
+          posicao?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
