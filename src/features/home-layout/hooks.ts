@@ -13,8 +13,10 @@ export function useSalvarOrdemHome() {
     mutationFn: (rotasEmOrdem: string[]) => salvarOrdemHome(rotasEmOrdem),
     onMutate: async (rotasEmOrdem: string[]) => {
       await qc.cancelQueries({ queryKey: KEY });
-      const anterior = qc.getQueryData<Map<string, number>>(KEY);
-      qc.setQueryData(KEY, new Map(rotasEmOrdem.map((rota, i) => [rota, i])));
+      const anterior = qc.getQueryData<Record<string, number>>(KEY);
+      const posicoes: Record<string, number> = {};
+      rotasEmOrdem.forEach((rota, i) => (posicoes[rota] = i));
+      qc.setQueryData(KEY, posicoes);
       return { anterior };
     },
     onError: (_err, _vars, ctx) => {

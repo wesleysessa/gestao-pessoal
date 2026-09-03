@@ -1,12 +1,17 @@
 import { supabase } from "@/integrations/supabase/client";
 
-/** Mapa rota -> posição salva pelo usuário (módulo sem linha usa a ordem padrão do código). */
-export async function listPosicoesHome() {
+/**
+ * Objeto rota -> posição salva pelo usuário (módulo sem chave usa a ordem
+ * padrão do código). Usa objeto simples (não Map) porque essa query fica
+ * no cache persistido em localStorage (ver __root.tsx) — um Map vira "{}"
+ * ao passar por JSON.stringify/parse e quebra a tela ao reabrir o app.
+ */
+export async function listPosicoesHome(): Promise<Record<string, number>> {
   const { data, error } = await supabase.from("modulos_home").select("rota, posicao");
   if (error) throw error;
-  const map = new Map<string, number>();
-  for (const row of data ?? []) map.set(row.rota, row.posicao);
-  return map;
+  const posicoes: Record<string, number> = {};
+  for (const row of data ?? []) posicoes[row.rota] = row.posicao;
+  return posicoes;
 }
 
 /** Grava a ordem inteira de uma vez (a lista de rotas já na ordem desejada). */

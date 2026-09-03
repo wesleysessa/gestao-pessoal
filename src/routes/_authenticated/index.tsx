@@ -95,8 +95,8 @@ function Home() {
 
   const modulosOrdenados = useMemo(() => {
     return [...MODULOS].sort((a, b) => {
-      const posA = posicoes?.get(a.to) ?? ORDEM_PADRAO.indexOf(a.to);
-      const posB = posicoes?.get(b.to) ?? ORDEM_PADRAO.indexOf(b.to);
+      const posA = posicoes?.[a.to] ?? ORDEM_PADRAO.indexOf(a.to);
+      const posB = posicoes?.[b.to] ?? ORDEM_PADRAO.indexOf(b.to);
       return posA - posB;
     });
   }, [posicoes]);
