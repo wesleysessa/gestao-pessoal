@@ -558,6 +558,7 @@ export type Database = {
           data: string;
           classe_gramatical: string | null;
           antonimo: string | null;
+          dificuldade: string;
           created_at: string;
         };
         Insert: {
@@ -570,6 +571,7 @@ export type Database = {
           data?: string;
           classe_gramatical?: string | null;
           antonimo?: string | null;
+          dificuldade?: string;
           created_at?: string;
         };
         Update: {
@@ -582,6 +584,7 @@ export type Database = {
           data?: string;
           classe_gramatical?: string | null;
           antonimo?: string | null;
+          dificuldade?: string;
           created_at?: string;
         };
         Relationships: [];

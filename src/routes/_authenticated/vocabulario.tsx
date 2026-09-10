@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { fmtData } from "@/lib/data";
+import { cn } from "@/lib/utils";
 import { useSignedUrl } from "@/lib/use-signed-url";
 import { useCurrentProfile } from "@/features/auth/use-current-profile";
 import {
@@ -44,7 +45,11 @@ import {
 import { FOTOS_BUCKET } from "@/features/vocabulario/service";
 import {
   CLASSE_GRAMATICAL_LABEL,
+  DIFICULDADE_INFO,
+  DIFICULDADE_ORDEM,
+  DIFICULDADE_PESO,
   type ClasseGramatical,
+  type Dificuldade,
   type FotoVocabulario,
   type Vocabulario as VocabularioItem,
 } from "@/features/vocabulario/types";
@@ -60,6 +65,24 @@ const CLASSES_GRAMATICAIS: ClasseGramatical[] = [
   "phrasal_verb",
   "outro",
 ];
+
+/**
+ * Fila embaralhada pro Jogo de Cards, com peso por dificuldade: palavra
+ * "vermelha" (difícil) entra repetida na fila e por isso aparece mais vezes
+ * que uma "verde" (fácil) ao longo da sessão de estudo.
+ */
+function montarFilaAleatoria(itens: VocabularioItem[]): VocabularioItem[] {
+  const fila: VocabularioItem[] = [];
+  for (const item of itens) {
+    const peso = DIFICULDADE_PESO[(item.dificuldade as Dificuldade) || "amarelo"];
+    for (let k = 0; k < peso; k++) fila.push(item);
+  }
+  for (let i = fila.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [fila[i], fila[j]] = [fila[j], fila[i]];
+  }
+  return fila;
+}
 
 function FotoThumbInner({ path }: { path: string }) {
   const { data: url } = useSignedUrl(FOTOS_BUCKET, path);
@@ -240,8 +263,15 @@ function JogoCards({
             <IconCards className="size-4.5" /> Jogo de Cards
           </DialogTitle>
         </DialogHeader>
-        <p className="-mt-2 text-center text-xs text-muted-foreground">
+        <p className="-mt-2 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
           {indice + 1} de {itens.length}
+          <span
+            title={DIFICULDADE_INFO[(item.dificuldade as Dificuldade) || "amarelo"].label}
+            className={cn(
+              "size-2.5 rounded-full",
+              DIFICULDADE_INFO[(item.dificuldade as Dificuldade) || "amarelo"].dot,
+            )}
+          />
         </p>
 
         <button
@@ -316,10 +346,11 @@ function Vocabulario() {
   const [exemplo, setExemplo] = useState("");
   const [classeGramatical, setClasseGramatical] = useState<ClasseGramatical | "">("");
   const [antonimo, setAntonimo] = useState("");
+  const [dificuldade, setDificuldade] = useState<Dificuldade>("amarelo");
   const [filtro, setFiltro] = useState("todos");
   const [busca, setBusca] = useState("");
   const [modo, setModo] = useState<"lista" | "phrasal">("lista");
-  const [jogo, setJogo] = useState<{ indice: number } | null>(null);
+  const [jogo, setJogo] = useState<{ itens: VocabularioItem[]; indice: number } | null>(null);
   const [novasFotos, setNovasFotos] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Formulário começa fechado — só um botão "+ Inserir Vocabulário".
@@ -363,6 +394,7 @@ function Vocabulario() {
     setExemplo(i.exemplo ?? "");
     setClasseGramatical((i.classe_gramatical as ClasseGramatical) ?? "");
     setAntonimo(i.antonimo ?? "");
+    setDificuldade((i.dificuldade as Dificuldade) || "amarelo");
     setNovasFotos([]);
     setFormAberto(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -376,6 +408,7 @@ function Vocabulario() {
     setExemplo("");
     setClasseGramatical("");
     setAntonimo("");
+    setDificuldade("amarelo");
     setNovasFotos([]);
     setFormAberto(false);
   }
@@ -403,6 +436,7 @@ function Vocabulario() {
       exemplo: exemplo.trim() || null,
       classe_gramatical: classeGramatical,
       antonimo: antonimo.trim() || null,
+      dificuldade,
     };
     if (editando) {
       atualizar.mutate(
@@ -530,6 +564,32 @@ function Vocabulario() {
                 onChange={(e) => setExemplo(e.target.value)}
                 placeholder="ex.: pure serendipity."
               />
+            </div>
+
+            <div className="mb-3 space-y-1.5">
+              <Label>Dificuldade</Label>
+              <p className="text-xs text-muted-foreground">
+                Controla a frequência da palavra no Jogo de Cards — difícil aparece mais.
+              </p>
+              <div className="flex gap-2">
+                {DIFICULDADE_ORDEM.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDificuldade(d)}
+                    title={DIFICULDADE_INFO[d].label}
+                    className={cn(
+                      "flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition",
+                      dificuldade === d
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-input text-foreground",
+                    )}
+                  >
+                    <span className={cn("size-3 rounded-full", DIFICULDADE_INFO[d].dot)} />
+                    {DIFICULDADE_INFO[d].label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="mb-3 space-y-1.5">
@@ -699,7 +759,7 @@ function Vocabulario() {
                   size="sm"
                   className="gap-1.5"
                   disabled={visiveis.length === 0}
-                  onClick={() => setJogo({ indice: 0 })}
+                  onClick={() => setJogo({ itens: montarFilaAleatoria(visiveis), indice: 0 })}
                 >
                   <IconCards className="size-3.5" /> Jogo de Cards
                 </Button>
@@ -723,13 +783,22 @@ function Vocabulario() {
               {visiveis.map((i, idx) => (
                 <Card
                   key={i.id}
-                  onClick={() => setJogo({ indice: idx })}
+                  onClick={() => setJogo({ itens: visiveis, indice: idx })}
                   className={`cursor-pointer ${editando?.id === i.id ? "border-primary" : ""}`}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                          <span
+                            title={
+                              DIFICULDADE_INFO[(i.dificuldade as Dificuldade) || "amarelo"].label
+                            }
+                            className={cn(
+                              "size-2.5 shrink-0 rounded-full",
+                              DIFICULDADE_INFO[(i.dificuldade as Dificuldade) || "amarelo"].dot,
+                            )}
+                          />
                           <Badge variant="secondary">{i.idioma}</Badge>
                           {i.classe_gramatical && (
                             <Badge variant="outline">
@@ -786,7 +855,7 @@ function Vocabulario() {
       )}
 
       {jogo && (
-        <JogoCards itens={visiveis} indiceInicial={jogo.indice} onFechar={() => setJogo(null)} />
+        <JogoCards itens={jogo.itens} indiceInicial={jogo.indice} onFechar={() => setJogo(null)} />
       )}
     </div>
   );
