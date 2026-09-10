@@ -29,6 +29,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { fmtData } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { useSignedUrl } from "@/lib/use-signed-url";
@@ -465,6 +471,26 @@ function Vocabulario() {
     remover.mutate(id, { onError: (e: Error) => toast.error(e.message) });
   }
 
+  /** Troca só a dificuldade, direto pelo card — sem abrir o formulário todo. */
+  function mudarDificuldade(item: VocabularioItem, nova: Dificuldade) {
+    if (item.dificuldade === nova) return;
+    atualizar.mutate(
+      {
+        id: item.id,
+        input: {
+          termo: item.termo,
+          idioma: item.idioma,
+          traducao: item.traducao,
+          exemplo: item.exemplo,
+          classe_gramatical: item.classe_gramatical,
+          antonimo: item.antonimo,
+          dificuldade: nova,
+        },
+      },
+      { onError: (e: Error) => toast.error(e.message) },
+    );
+  }
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-4">
       <div className="mb-1 flex items-start justify-between gap-2">
@@ -790,15 +816,33 @@ function Vocabulario() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="mb-1 flex flex-wrap items-center gap-1.5">
-                          <span
-                            title={
-                              DIFICULDADE_INFO[(i.dificuldade as Dificuldade) || "amarelo"].label
-                            }
-                            className={cn(
-                              "size-2.5 shrink-0 rounded-full",
-                              DIFICULDADE_INFO[(i.dificuldade as Dificuldade) || "amarelo"].dot,
-                            )}
-                          />
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label="Mudar dificuldade"
+                                title={`Dificuldade: ${DIFICULDADE_INFO[(i.dificuldade as Dificuldade) || "amarelo"].label} — toque pra mudar`}
+                                className={cn(
+                                  "size-4 shrink-0 rounded-full ring-1 ring-black/10 transition hover:scale-110",
+                                  DIFICULDADE_INFO[(i.dificuldade as Dificuldade) || "amarelo"].dot,
+                                )}
+                              />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+                              {DIFICULDADE_ORDEM.map((d) => (
+                                <DropdownMenuItem key={d} onClick={() => mudarDificuldade(i, d)}>
+                                  <span
+                                    className={cn(
+                                      "mr-2 inline-block size-2.5 rounded-full",
+                                      DIFICULDADE_INFO[d].dot,
+                                    )}
+                                  />
+                                  {DIFICULDADE_INFO[d].label}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                           <Badge variant="secondary">{i.idioma}</Badge>
                           {i.classe_gramatical && (
                             <Badge variant="outline">
