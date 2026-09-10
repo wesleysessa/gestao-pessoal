@@ -2,6 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   IconCamera,
+  IconCards,
+  IconChevronLeft,
+  IconChevronRight,
   IconLanguage,
   IconLayoutGrid,
   IconPencil,
@@ -185,6 +188,119 @@ function FotosExistentes({ vocabularioId }: { vocabularioId: string }) {
   );
 }
 
+/** Figura do card do jogo — 1ª foto anexada, ou um placeholder quando não há foto. */
+function CartaFoto({ vocabularioId }: { vocabularioId: string }) {
+  const { data: fotos = [] } = useFotosVocabulario(vocabularioId);
+  const foto = fotos[0];
+  if (!foto) {
+    return (
+      <div className="flex size-24 shrink-0 items-center justify-center rounded-lg bg-muted">
+        <IconPhoto className="size-8 text-muted-foreground/40" stroke={1.5} />
+      </div>
+    );
+  }
+  return (
+    <div className="size-24 shrink-0 overflow-hidden rounded-lg bg-muted">
+      <FotoThumbInner path={foto.storage_path} />
+    </div>
+  );
+}
+
+/**
+ * Jogo de memorização: 1 carta por vez, começa mostrando a figura + a
+ * tradução (o lado "em português"); toque na carta vira e revela a palavra
+ * ou expressão original, com a frase de exemplo.
+ */
+function JogoCards({
+  itens,
+  indiceInicial,
+  onFechar,
+}: {
+  itens: VocabularioItem[];
+  indiceInicial: number;
+  onFechar: () => void;
+}) {
+  const [indice, setIndice] = useState(indiceInicial);
+  const [virada, setVirada] = useState(false);
+  const item = itens[indice];
+
+  function irPara(novoIndice: number) {
+    if (novoIndice < 0 || novoIndice >= itens.length) return;
+    setIndice(novoIndice);
+    setVirada(false);
+  }
+
+  if (!item) return null;
+
+  return (
+    <Dialog open onOpenChange={(aberto) => !aberto && onFechar()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-1.5">
+            <IconCards className="size-4.5" /> Jogo de Cards
+          </DialogTitle>
+        </DialogHeader>
+        <p className="-mt-2 text-center text-xs text-muted-foreground">
+          {indice + 1} de {itens.length}
+        </p>
+
+        <button
+          type="button"
+          onClick={() => setVirada((v) => !v)}
+          className="flex min-h-[240px] w-full flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-6 text-center"
+        >
+          {!virada ? (
+            <>
+              <CartaFoto vocabularioId={item.id} />
+              <Badge variant="secondary">{item.idioma}</Badge>
+              <div className="text-xl font-semibold text-foreground">{item.traducao}</div>
+              <span className="text-xs text-muted-foreground">Toque pra ver a palavra</span>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center justify-center gap-1.5">
+                <Badge variant="secondary">{item.idioma}</Badge>
+                {item.classe_gramatical && (
+                  <Badge variant="outline">
+                    {CLASSE_GRAMATICAL_LABEL[item.classe_gramatical as ClasseGramatical]}
+                  </Badge>
+                )}
+              </div>
+              <div className="text-2xl font-bold text-foreground">{item.termo}</div>
+              {item.antonimo && (
+                <div className="text-xs text-muted-foreground">Antônimo: {item.antonimo}</div>
+              )}
+              {item.exemplo && (
+                <div className="text-sm italic text-muted-foreground">“{item.exemplo}”</div>
+              )}
+              <span className="text-xs text-muted-foreground">Toque pra voltar</span>
+            </>
+          )}
+        </button>
+
+        <div className="flex items-center justify-between gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => irPara(indice - 1)}
+            disabled={indice === 0}
+          >
+            <IconChevronLeft className="size-4" /> Anterior
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => irPara(indice + 1)}
+            disabled={indice === itens.length - 1}
+          >
+            Próxima <IconChevronRight className="size-4" />
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function Vocabulario() {
   const { data: itens = [], isLoading } = useVocabulario();
   const { data: profile } = useCurrentProfile();
@@ -203,8 +319,7 @@ function Vocabulario() {
   const [filtro, setFiltro] = useState("todos");
   const [busca, setBusca] = useState("");
   const [modo, setModo] = useState<"lista" | "phrasal">("lista");
-  const [revisao, setRevisao] = useState(false);
-  const [revelados, setRevelados] = useState<Record<string, boolean>>({});
+  const [jogo, setJogo] = useState<{ indice: number } | null>(null);
   const [novasFotos, setNovasFotos] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Formulário começa fechado — só um botão "+ Inserir Vocabulário".
@@ -582,18 +697,12 @@ function Vocabulario() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    setRevisao((v) => !v);
-                    setRevelados({});
-                  }}
+                  className="gap-1.5"
+                  disabled={visiveis.length === 0}
+                  onClick={() => setJogo({ indice: 0 })}
                 >
-                  {revisao ? "Sair do modo revisão" : "Modo revisão"}
+                  <IconCards className="size-3.5" /> Jogo de Cards
                 </Button>
-                {revisao && (
-                  <span className="text-xs text-muted-foreground">
-                    Toque no card para revelar a tradução
-                  </span>
-                )}
               </>
             )}
           </div>
@@ -611,8 +720,12 @@ function Vocabulario() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {visiveis.map((i) => (
-                <Card key={i.id} className={editando?.id === i.id ? "border-primary" : undefined}>
+              {visiveis.map((i, idx) => (
+                <Card
+                  key={i.id}
+                  onClick={() => setJogo({ indice: idx })}
+                  className={`cursor-pointer ${editando?.id === i.id ? "border-primary" : ""}`}
+                >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -631,14 +744,20 @@ function Vocabulario() {
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <button
-                          onClick={() => iniciarEdicao(i)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            iniciarEdicao(i);
+                          }}
                           aria-label="Editar"
                           className="text-muted-foreground transition hover:text-primary"
                         >
                           <IconPencil className="size-4" />
                         </button>
                         <button
-                          onClick={() => excluir(i.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            excluir(i.id);
+                          }}
                           aria-label="Excluir"
                           className="text-muted-foreground transition hover:text-destructive"
                         >
@@ -646,24 +765,13 @@ function Vocabulario() {
                         </button>
                       </div>
                     </div>
-                    {revisao && !revelados[i.id] ? (
-                      <button
-                        onClick={() => setRevelados({ ...revelados, [i.id]: true })}
-                        className="mt-2 w-full rounded-md bg-secondary px-3 py-1.5 text-left text-sm font-medium text-secondary-foreground"
-                      >
-                        Revelar tradução
-                      </button>
-                    ) : (
-                      <>
-                        <div className="mt-1.5 text-sm text-foreground">{i.traducao}</div>
-                        {i.antonimo && (
-                          <div className="mt-0.5 text-xs text-muted-foreground">
-                            Antônimo: {i.antonimo}
-                          </div>
-                        )}
-                      </>
+                    <div className="mt-1.5 text-sm text-foreground">{i.traducao}</div>
+                    {i.antonimo && (
+                      <div className="mt-0.5 text-xs text-muted-foreground">
+                        Antônimo: {i.antonimo}
+                      </div>
                     )}
-                    {i.exemplo && (!revisao || revelados[i.id]) && (
+                    {i.exemplo && (
                       <div className="mt-1.5 text-xs italic text-muted-foreground">
                         “{i.exemplo}”
                       </div>
@@ -675,6 +783,10 @@ function Vocabulario() {
             </div>
           )}
         </>
+      )}
+
+      {jogo && (
+        <JogoCards itens={visiveis} indiceInicial={jogo.indice} onFechar={() => setJogo(null)} />
       )}
     </div>
   );
