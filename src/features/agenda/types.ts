@@ -76,17 +76,25 @@ export const CORES_EVENTO_ORDEM: CorEvento[] = [
   "graphite",
 ];
 
-export type Recorrencia = "nenhuma" | "diaria" | "semanal" | "mensal" | "anual";
+export type Recorrencia = "nenhuma" | "diaria" | "semanal" | "mensal" | "bimestral" | "anual";
 
 export const RECORRENCIA_LABEL: Record<Recorrencia, string> = {
   nenhuma: "Não repete",
   diaria: "Diariamente",
   semanal: "Semanalmente",
   mensal: "Mensalmente",
+  bimestral: "Bimestralmente (a cada 2 meses)",
   anual: "Anualmente",
 };
 
-export const RECORRENCIAS: Recorrencia[] = ["nenhuma", "diaria", "semanal", "mensal", "anual"];
+export const RECORRENCIAS: Recorrencia[] = [
+  "nenhuma",
+  "diaria",
+  "semanal",
+  "mensal",
+  "bimestral",
+  "anual",
+];
 
 /** Minutos antes do evento — por enquanto só uma anotação, sem notificação de fato. */
 export const LEMBRETE_OPCOES: { valor: number | null; label: string }[] = [

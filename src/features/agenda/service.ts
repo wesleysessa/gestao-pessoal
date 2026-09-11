@@ -126,7 +126,9 @@ export function expandirOcorrencias(eventos: Evento[], de: string, ate: string):
           ? (iso: string) => addDias(iso, 7)
           : evento.recorrencia === "mensal"
             ? (iso: string) => addMeses(iso, 1)
-            : (iso: string) => addAnos(iso, 1);
+            : evento.recorrencia === "bimestral"
+              ? (iso: string) => addMeses(iso, 2)
+              : (iso: string) => addAnos(iso, 1);
 
     const limite = evento.recorrencia_fim ? menor(evento.recorrencia_fim, ate) : ate;
     let cursor = evento.data;
