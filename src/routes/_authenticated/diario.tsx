@@ -237,6 +237,7 @@ function Diario() {
   const desmarcarAcademia = useDesmarcarCheckinAcademia();
 
   const [editando, setEditando] = useState<EntradaDiario | null>(null);
+  const [dataEntrada, setDataEntrada] = useState(hoje());
   const [titulo, setTitulo] = useState("");
   const [aprendizado, setAprendizado] = useState("");
   const [texto, setTexto] = useState("");
@@ -255,6 +256,7 @@ function Diario() {
 
   function iniciarEdicao(e: EntradaDiario) {
     setEditando(e);
+    setDataEntrada(e.data);
     setTitulo(e.titulo ?? "");
     setAprendizado(e.aprendizado ?? "");
     setTexto(e.texto);
@@ -268,6 +270,7 @@ function Diario() {
 
   function cancelarEdicao() {
     setEditando(null);
+    setDataEntrada(hoje());
     setTitulo("");
     setAprendizado("");
     setTexto("");
@@ -302,6 +305,7 @@ function Diario() {
   function salvar() {
     if (!texto.trim()) return;
     const input = {
+      data: dataEntrada,
       titulo: titulo.trim() || null,
       aprendizado: aprendizado.trim() || null,
       texto: texto.trim(),
@@ -467,11 +471,21 @@ function Diario() {
         <Card className="mb-5">
           <CardContent className="pt-6">
             <div className="mb-3 space-y-1.5">
-              <Label>
-                {editando
-                  ? `Editando entrada de ${fmtData(editando.data)}`
-                  : `Entrada de ${fmtData(hoje())}`}
-              </Label>
+              <Label>Data</Label>
+              <Input
+                type="date"
+                value={dataEntrada}
+                max={hoje()}
+                onChange={(e) => setDataEntrada(e.target.value)}
+                className="w-auto"
+              />
+              {dataEntrada !== hoje() && (
+                <p className="text-xs text-muted-foreground">
+                  Registrando {fmtData(dataEntrada)} — esqueceu de escrever na hora, sem problema.
+                </p>
+              )}
+            </div>
+            <div className="mb-3 space-y-1.5">
               <Input
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}

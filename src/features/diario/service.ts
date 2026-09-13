@@ -16,13 +16,14 @@ export async function listDiario() {
 
 /**
  * Retorna a linha criada — precisamos do id pra poder anexar fotos em
- * seguida. `data` é sempre o dia local de hoje (não deixamos o Postgres
- * decidir — o `current_date` dele é em UTC).
+ * seguida. `input.data` vem do formulário (dia local escolhido — permite
+ * registrar um dia esquecido); se não vier, cai no dia local de hoje (nunca
+ * deixamos o Postgres decidir — o `current_date` dele é em UTC).
  */
 export async function createEntradaDiario(input: NovaEntradaDiario) {
   const { data, error } = await supabase
     .from("diario")
-    .insert({ ...input, data: hoje() })
+    .insert({ ...input, data: input.data ?? hoje() })
     .select("*")
     .single();
   if (error) throw error;
