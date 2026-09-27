@@ -11,7 +11,7 @@ import type { AppIcon } from "@/components/app-icon";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { fmtData, hoje } from "@/lib/data";
+import { addDias, fmtData, hoje } from "@/lib/data";
 import {
   useDadosGoogleHealth,
   useSincronizarGoogleHealth,
@@ -50,12 +50,14 @@ function TileMetrica({
   rotulo,
   tom,
   onClick,
+  comparacao,
 }: {
   icon: AppIcon;
   valor: string;
   rotulo: string;
   tom: keyof typeof TOM_TILE;
   onClick: () => void;
+  comparacao: Comparacao | null;
 }) {
   const cores = TOM_TILE[tom];
   return (
@@ -74,14 +76,71 @@ function TileMetrica({
         <div className="text-lg font-bold leading-tight text-foreground">{valor}</div>
         <div className="text-[11px] leading-tight text-muted-foreground">{rotulo}</div>
       </div>
+      {comparacao && (
+        <div className="border-t border-black/5 pt-1.5 text-[11px] leading-tight dark:border-white/10">
+          <div className="text-muted-foreground">média 30d: {comparacao.media}</div>
+          <div
+            className={cn(
+              "font-semibold",
+              comparacao.bom === null
+                ? "text-muted-foreground"
+                : comparacao.bom
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-red-600 dark:text-red-400",
+            )}
+          >
+            {comparacao.texto}
+          </div>
+        </div>
+      )}
     </button>
   );
+}
+
+type Comparacao = { media: string; texto: string; bom: boolean | null };
+
+/**
+ * Compara o valor do dia com a média dos 30 dias anteriores (o próprio dia
+ * fica fora da média). `maiorEhMelhor` define a cor: passos e sono, quanto
+ * mais melhor; frequência de repouso, quanto menos melhor.
+ */
+function comparar(
+  dados: { data: string; valor: number | null }[],
+  dia: string,
+  valorDia: number,
+  maiorEhMelhor: boolean,
+  fmt: (v: number) => string,
+  diaEmAndamento = false,
+): Comparacao | null {
+  const inicio = addDias(dia, -30);
+  const valores = dados
+    .filter((d) => d.data < dia && d.data >= inicio && d.valor != null)
+    .map((d) => d.valor as number);
+  if (valores.length < 3) return null;
+  const media = valores.reduce((a, b) => a + b, 0) / valores.length;
+  // Dia ainda em andamento (passos de hoje): mostra o progresso, sem julgar.
+  if (diaEmAndamento) {
+    return {
+      media: fmt(media),
+      texto: `${Math.round((valorDia / media) * 100)}% da média até agora`,
+      bom: null,
+    };
+  }
+  const pct = ((valorDia - media) / media) * 100;
+  if (Math.abs(pct) < 3) return { media: fmt(media), texto: "= na média", bom: null };
+  const acima = pct > 0;
+  return {
+    media: fmt(media),
+    texto: `${acima ? "▲" : "▼"} ${Math.abs(pct).toFixed(0)}% ${acima ? "acima" : "abaixo"}`,
+    bom: acima === maiorEhMelhor,
+  };
 }
 
 /** Card de status/conexão do Google Health — usado na Home (topo). */
 export function GoogleHealthCard() {
   const { data: status, isLoading } = useStatusGoogleHealth();
-  const { data: dados = [] } = useDadosGoogleHealth();
+  // 90 dias: mesmo cache do gráfico de evolução, e cobre a média de 30 dias.
+  const { data: dados = [] } = useDadosGoogleHealth(90);
   const sincronizar = useSincronizarGoogleHealth();
   const [historico, setHistorico] = useState<MetricaSaude | null>(null);
   const hojeDados = dados.find((d) => d.data === hoje()) ?? dados[0];
@@ -154,6 +213,14 @@ export function GoogleHealthCard() {
                   rotulo="passos"
                   tom="teal"
                   onClick={() => setHistorico("passos")}
+                  comparacao={comparar(
+                    dados.map((d) => ({ data: d.data, valor: d.passos })),
+                    hojeDados.data,
+                    hojeDados.passos,
+                    true,
+                    (v) => Math.round(v).toLocaleString("pt-BR"),
+                    hojeDados.data === hoje(),
+                  )}
                 />
               )}
               {hojeDados.frequencia_repouso != null && (
@@ -163,6 +230,13 @@ export function GoogleHealthCard() {
                   rotulo="freq. de repouso"
                   tom="rose"
                   onClick={() => setHistorico("frequencia_repouso")}
+                  comparacao={comparar(
+                    dados.map((d) => ({ data: d.data, valor: d.frequencia_repouso })),
+                    hojeDados.data,
+                    hojeDados.frequencia_repouso,
+                    false,
+                    (v) => `${v.toFixed(0)} bpm`,
+                  )}
                 />
               )}
               {hojeDados.sono_minutos != null && (
@@ -172,6 +246,13 @@ export function GoogleHealthCard() {
                   rotulo="de sono"
                   tom="violet"
                   onClick={() => setHistorico("sono_minutos")}
+                  comparacao={comparar(
+                    dados.map((d) => ({ data: d.data, valor: d.sono_minutos })),
+                    hojeDados.data,
+                    hojeDados.sono_minutos,
+                    true,
+                    (v) => fmtMinutos(Math.round(v)),
+                  )}
                 />
               )}
             </div>
