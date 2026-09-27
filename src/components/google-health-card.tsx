@@ -5,6 +5,7 @@ import {
   IconPlugConnected,
   IconRefresh,
 } from "@tabler/icons-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import type { AppIcon } from "@/components/app-icon";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,6 +18,7 @@ import {
   useStatusGoogleHealth,
 } from "@/features/google-health/hooks";
 import { montarUrlAutorizacaoGoogleHealth } from "@/features/google-health/service";
+import { GoogleHealthHistorico, type MetricaSaude } from "@/components/google-health-historico";
 
 function fmtMinutos(min: number): string {
   const h = Math.floor(min / 60);
@@ -47,21 +49,32 @@ function TileMetrica({
   valor,
   rotulo,
   tom,
+  onClick,
 }: {
   icon: AppIcon;
   valor: string;
   rotulo: string;
   tom: keyof typeof TOM_TILE;
+  onClick: () => void;
 }) {
   const cores = TOM_TILE[tom];
   return (
-    <div className={cn("flex flex-col gap-2 rounded-xl border p-3", cores.bg, cores.border)}>
+    <button
+      type="button"
+      onClick={onClick}
+      title="Ver evolução"
+      className={cn(
+        "flex flex-col gap-2 rounded-xl border p-3 text-left transition hover:brightness-95",
+        cores.bg,
+        cores.border,
+      )}
+    >
       <Icon className={cn("size-5", cores.accent)} stroke={2} />
       <div>
         <div className="text-lg font-bold leading-tight text-foreground">{valor}</div>
         <div className="text-[11px] leading-tight text-muted-foreground">{rotulo}</div>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -70,6 +83,7 @@ export function GoogleHealthCard() {
   const { data: status, isLoading } = useStatusGoogleHealth();
   const { data: dados = [] } = useDadosGoogleHealth();
   const sincronizar = useSincronizarGoogleHealth();
+  const [historico, setHistorico] = useState<MetricaSaude | null>(null);
   const hojeDados = dados.find((d) => d.data === hoje()) ?? dados[0];
 
   function conectar() {
@@ -139,6 +153,7 @@ export function GoogleHealthCard() {
                   valor={hojeDados.passos.toLocaleString("pt-BR")}
                   rotulo="passos"
                   tom="teal"
+                  onClick={() => setHistorico("passos")}
                 />
               )}
               {hojeDados.frequencia_repouso != null && (
@@ -147,6 +162,7 @@ export function GoogleHealthCard() {
                   valor={`${hojeDados.frequencia_repouso} bpm`}
                   rotulo="freq. de repouso"
                   tom="rose"
+                  onClick={() => setHistorico("frequencia_repouso")}
                 />
               )}
               {hojeDados.sono_minutos != null && (
@@ -155,11 +171,17 @@ export function GoogleHealthCard() {
                   valor={fmtMinutos(hojeDados.sono_minutos)}
                   rotulo="de sono"
                   tom="violet"
+                  onClick={() => setHistorico("sono_minutos")}
                 />
               )}
             </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">({fmtData(hojeDados.data)})</p>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              ({fmtData(hojeDados.data)}) · toque num quadro pra ver a evolução
+            </p>
           </div>
+        )}
+        {historico && (
+          <GoogleHealthHistorico metrica={historico} onFechar={() => setHistorico(null)} />
         )}
       </CardContent>
     </Card>
