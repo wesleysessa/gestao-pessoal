@@ -1,11 +1,13 @@
 import {
+  IconChevronLeft,
+  IconChevronRight,
   IconFootsteps,
   IconHeartbeat,
   IconMoon,
   IconPlugConnected,
   IconRefresh,
 } from "@tabler/icons-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { AppIcon } from "@/components/app-icon";
 import { Card, CardContent } from "@/components/ui/card";
@@ -136,6 +138,22 @@ function comparar(
   };
 }
 
+const DIAS_SEMANA = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+
+/** "Hoje", "Ontem", "Anteontem" ou o dia da semana — sempre com a data. */
+function rotuloDia(iso: string): string {
+  const [a, m, d] = iso.split("-").map(Number);
+  const relativo =
+    iso === hoje()
+      ? "Hoje"
+      : iso === addDias(hoje(), -1)
+        ? "Ontem"
+        : iso === addDias(hoje(), -2)
+          ? "Anteontem"
+          : DIAS_SEMANA[new Date(a, m - 1, d).getDay()];
+  return `${relativo.charAt(0).toUpperCase()}${relativo.slice(1)} · ${fmtData(iso)}`;
+}
+
 /** Card de status/conexão do Google Health — usado na Home (topo). */
 export function GoogleHealthCard() {
   const { data: status, isLoading } = useStatusGoogleHealth();
@@ -143,7 +161,14 @@ export function GoogleHealthCard() {
   const { data: dados = [] } = useDadosGoogleHealth(90);
   const sincronizar = useSincronizarGoogleHealth();
   const [historico, setHistorico] = useState<MetricaSaude | null>(null);
-  const hojeDados = dados.find((d) => d.data === hoje()) ?? dados[0];
+  // `dados` vem do mais recente pro mais antigo: 0 = último dia sincronizado
+  // (hoje, normalmente); avançar o índice = voltar no tempo.
+  const [indice, setIndice] = useState(0);
+  const indiceValido = Math.min(indice, Math.max(dados.length - 1, 0));
+  const hojeDados = dados[indiceValido];
+  const podeVoltar = indiceValido < dados.length - 1;
+  const podeAvancar = indiceValido > 0;
+  const toqueInicioX = useRef<number | null>(null);
 
   function conectar() {
     try {
@@ -205,7 +230,47 @@ export function GoogleHealthCard() {
 
         {status?.conectado && hojeDados && (
           <div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setIndice(indiceValido + 1)}
+                disabled={!podeVoltar}
+                aria-label="Dia anterior"
+                className="rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-25"
+              >
+                <IconChevronLeft className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIndice(0)}
+                disabled={!podeAvancar}
+                title={podeAvancar ? "Voltar pro dia mais recente" : undefined}
+                className="text-xs font-semibold text-foreground disabled:cursor-default"
+              >
+                {rotuloDia(hojeDados.data)}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIndice(indiceValido - 1)}
+                disabled={!podeAvancar}
+                aria-label="Dia seguinte"
+                className="rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-25"
+              >
+                <IconChevronRight className="size-4" />
+              </button>
+            </div>
+            <div
+              className="grid grid-cols-3 gap-2"
+              // Deslizar o dedo pros lados também troca o dia.
+              onTouchStart={(e) => (toqueInicioX.current = e.touches[0].clientX)}
+              onTouchEnd={(e) => {
+                if (toqueInicioX.current == null) return;
+                const dx = e.changedTouches[0].clientX - toqueInicioX.current;
+                toqueInicioX.current = null;
+                if (dx > 50 && podeVoltar) setIndice(indiceValido + 1);
+                else if (dx < -50 && podeAvancar) setIndice(indiceValido - 1);
+              }}
+            >
               {hojeDados.passos != null && (
                 <TileMetrica
                   icon={IconFootsteps}
@@ -257,7 +322,7 @@ export function GoogleHealthCard() {
               )}
             </div>
             <p className="mt-2 text-[11px] text-muted-foreground">
-              ({fmtData(hojeDados.data)}) · toque num quadro pra ver a evolução
+              ‹ › ou deslize pra ver outros dias · toque num quadro pra ver a evolução
             </p>
           </div>
         )}
