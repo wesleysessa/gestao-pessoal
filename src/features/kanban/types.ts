@@ -7,16 +7,13 @@ export type NovoCartaoKanban = Pick<
   "titulo" | "descricao" | "coluna" | "prioridade" | "prazo" | "escopo"
 >;
 
-export type ColunaKanban =
-  "backlog" | "a_fazer" | "em_processamento" | "aguardando_aprovacao" | "revisao" | "concluido";
+export type ColunaKanban = "backlog" | "a_fazer" | "em_processamento" | "concluido";
 
 /** Ordem do fluxo, da esquerda pra direita. */
 export const COLUNAS_KANBAN: ColunaKanban[] = [
   "backlog",
   "a_fazer",
   "em_processamento",
-  "aguardando_aprovacao",
-  "revisao",
   "concluido",
 ];
 
@@ -24,8 +21,6 @@ export const COLUNA_INFO: Record<ColunaKanban, { label: string; dot: string }> =
   backlog: { label: "Backlog", dot: "bg-slate-400" },
   a_fazer: { label: "A Fazer", dot: "bg-blue-500" },
   em_processamento: { label: "Em Processamento", dot: "bg-amber-500" },
-  aguardando_aprovacao: { label: "Aguardando Aprovação", dot: "bg-violet-500" },
-  revisao: { label: "Revisão", dot: "bg-orange-500" },
   concluido: { label: "Concluído", dot: "bg-green-500" },
 };
 
