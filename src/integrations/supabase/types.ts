@@ -637,6 +637,54 @@ export type Database = {
         };
         Relationships: [];
       };
+      kanban_cartoes: {
+        Row: {
+          id: string;
+          user_id: string;
+          titulo: string;
+          descricao: string | null;
+          coluna: string;
+          ordem: number;
+          prioridade: string;
+          prazo: string | null;
+          escopo: string;
+          movido_em: string;
+          concluido_em: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          titulo: string;
+          descricao?: string | null;
+          coluna?: string;
+          ordem?: number;
+          prioridade?: string;
+          prazo?: string | null;
+          escopo?: string;
+          movido_em?: string;
+          concluido_em?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          titulo?: string;
+          descricao?: string | null;
+          coluna?: string;
+          ordem?: number;
+          prioridade?: string;
+          prazo?: string | null;
+          escopo?: string;
+          movido_em?: string;
+          concluido_em?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       modulos_home: {
         Row: {
           user_id: string;

@@ -17,6 +17,7 @@ import { Route as AuthenticatedAguaRouteImport } from './routes/_authenticated/a
 import { Route as AuthenticatedCadastrosRouteImport } from './routes/_authenticated/cadastros'
 import { Route as AuthenticatedDiarioRouteImport } from './routes/_authenticated/diario'
 import { Route as AuthenticatedFitbitCallbackRouteImport } from './routes/_authenticated/fitbit-callback'
+import { Route as AuthenticatedKanbanRouteImport } from './routes/_authenticated/kanban'
 import { Route as AuthenticatedLivrosRouteImport } from './routes/_authenticated/livros'
 import { Route as AuthenticatedMelhoriasRouteImport } from './routes/_authenticated/melhorias'
 import { Route as AuthenticatedPrioridadesRouteImport } from './routes/_authenticated/prioridades'
@@ -63,6 +64,11 @@ const AuthenticatedFitbitCallbackRoute =
     path: '/fitbit-callback',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedKanbanRoute = AuthenticatedKanbanRouteImport.update({
+  id: '/kanban',
+  path: '/kanban',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedLivrosRoute = AuthenticatedLivrosRouteImport.update({
   id: '/livros',
   path: '/livros',
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/cadastros': typeof AuthenticatedCadastrosRoute
   '/diario': typeof AuthenticatedDiarioRoute
   '/fitbit-callback': typeof AuthenticatedFitbitCallbackRoute
+  '/kanban': typeof AuthenticatedKanbanRoute
   '/livros': typeof AuthenticatedLivrosRoute
   '/melhorias': typeof AuthenticatedMelhoriasRoute
   '/prioridades': typeof AuthenticatedPrioridadesRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/cadastros': typeof AuthenticatedCadastrosRoute
   '/diario': typeof AuthenticatedDiarioRoute
   '/fitbit-callback': typeof AuthenticatedFitbitCallbackRoute
+  '/kanban': typeof AuthenticatedKanbanRoute
   '/livros': typeof AuthenticatedLivrosRoute
   '/melhorias': typeof AuthenticatedMelhoriasRoute
   '/prioridades': typeof AuthenticatedPrioridadesRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/_authenticated/cadastros': typeof AuthenticatedCadastrosRoute
   '/_authenticated/diario': typeof AuthenticatedDiarioRoute
   '/_authenticated/fitbit-callback': typeof AuthenticatedFitbitCallbackRoute
+  '/_authenticated/kanban': typeof AuthenticatedKanbanRoute
   '/_authenticated/livros': typeof AuthenticatedLivrosRoute
   '/_authenticated/melhorias': typeof AuthenticatedMelhoriasRoute
   '/_authenticated/prioridades': typeof AuthenticatedPrioridadesRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/cadastros'
     | '/diario'
     | '/fitbit-callback'
+    | '/kanban'
     | '/livros'
     | '/melhorias'
     | '/prioridades'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/cadastros'
     | '/diario'
     | '/fitbit-callback'
+    | '/kanban'
     | '/livros'
     | '/melhorias'
     | '/prioridades'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cadastros'
     | '/_authenticated/diario'
     | '/_authenticated/fitbit-callback'
+    | '/_authenticated/kanban'
     | '/_authenticated/livros'
     | '/_authenticated/melhorias'
     | '/_authenticated/prioridades'
@@ -244,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFitbitCallbackRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/kanban': {
+      id: '/_authenticated/kanban'
+      path: '/kanban'
+      fullPath: '/kanban'
+      preLoaderRoute: typeof AuthenticatedKanbanRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/livros': {
       id: '/_authenticated/livros'
       path: '/livros'
@@ -288,6 +307,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCadastrosRoute: typeof AuthenticatedCadastrosRoute
   AuthenticatedDiarioRoute: typeof AuthenticatedDiarioRoute
   AuthenticatedFitbitCallbackRoute: typeof AuthenticatedFitbitCallbackRoute
+  AuthenticatedKanbanRoute: typeof AuthenticatedKanbanRoute
   AuthenticatedLivrosRoute: typeof AuthenticatedLivrosRoute
   AuthenticatedMelhoriasRoute: typeof AuthenticatedMelhoriasRoute
   AuthenticatedPrioridadesRoute: typeof AuthenticatedPrioridadesRoute
@@ -302,6 +322,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCadastrosRoute: AuthenticatedCadastrosRoute,
   AuthenticatedDiarioRoute: AuthenticatedDiarioRoute,
   AuthenticatedFitbitCallbackRoute: AuthenticatedFitbitCallbackRoute,
+  AuthenticatedKanbanRoute: AuthenticatedKanbanRoute,
   AuthenticatedLivrosRoute: AuthenticatedLivrosRoute,
   AuthenticatedMelhoriasRoute: AuthenticatedMelhoriasRoute,
   AuthenticatedPrioridadesRoute: AuthenticatedPrioridadesRoute,

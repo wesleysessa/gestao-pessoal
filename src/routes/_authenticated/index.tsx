@@ -6,7 +6,7 @@ import {
   IconBooks,
   IconDroplet,
   IconCalendar,
-  IconBulb,
+  IconLayoutKanban,
   IconChevronLeft,
   IconChevronRight,
 } from "@tabler/icons-react";
@@ -74,10 +74,11 @@ const MODULOS: Modulo[] = [
     border: "border-cyan-200 dark:border-cyan-900",
     accent: "text-cyan-600 dark:text-cyan-400",
   },
+  // Melhorias saiu da Home (fica no rodapé e no menu); o Kanban herdou a posição dela.
   {
-    rotulo: "Melhorias",
-    to: "/melhorias",
-    icon: IconBulb,
+    rotulo: "Kanban",
+    to: "/kanban",
+    icon: IconLayoutKanban,
     bg: "bg-orange-50 dark:bg-orange-950/40",
     border: "border-orange-200 dark:border-orange-900",
     accent: "text-orange-600 dark:text-orange-400",
