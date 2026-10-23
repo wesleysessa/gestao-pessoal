@@ -201,6 +201,7 @@ export type Database = {
           destaque: boolean;
           radar: boolean;
           escopo: string;
+          kanban_cartao_id: string | null;
           compromisso_ht_id: string | null;
           created_at: string;
           updated_at: string;
@@ -224,6 +225,7 @@ export type Database = {
           destaque?: boolean;
           radar?: boolean;
           escopo?: string;
+          kanban_cartao_id?: string | null;
           compromisso_ht_id?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -247,6 +249,7 @@ export type Database = {
           destaque?: boolean;
           radar?: boolean;
           escopo?: string;
+          kanban_cartao_id?: string | null;
           compromisso_ht_id?: string | null;
           created_at?: string;
           updated_at?: string;

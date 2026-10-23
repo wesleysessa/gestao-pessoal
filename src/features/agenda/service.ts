@@ -11,7 +11,8 @@ export async function listEventos() {
 }
 
 /** Retorna a linha criada — precisamos do id pra poder anexar fotos em seguida. */
-export async function createEvento(input: NovoEvento) {
+/** `kanban_cartao_id` só vem quando o evento nasce de um cartão do Kanban. */
+export async function createEvento(input: NovoEvento & { kanban_cartao_id?: string | null }) {
   const { data, error } = await supabase.from("agenda_eventos").insert(input).select("*").single();
   if (error) throw error;
   return data;

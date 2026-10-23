@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from "react";
 import {
   IconBriefcase,
   IconCalendar,
+  IconCalendarEvent,
   IconChevronLeft,
   IconChevronRight,
   IconDotsVertical,
@@ -38,7 +39,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { dataLocalDe, fmtData, hoje } from "@/lib/data";
+import { addDias, dataLocalDe, fmtData, hoje } from "@/lib/data";
+import { useConclusoes, useEventos } from "@/features/agenda/hooks";
+import { expandirOcorrencias } from "@/features/agenda/service";
+import { EventoDialog } from "@/features/agenda/components/evento-dialog";
+import { hhmm } from "@/features/agenda/util";
+import type { Evento } from "@/features/agenda/types";
 import {
   useCartoesKanban,
   useCreateCartao,
@@ -63,6 +69,15 @@ export const Route = createFileRoute("/_authenticated/kanban")({
 
 type Escopo = "pessoal" | "profissional";
 
+/** Próximo compromisso ainda "ativo" de um cartão: nem concluído, nem vencido. */
+type AgendaAtiva = { evento: Evento; data: string };
+
+/** Hora atual "HH:MM" local, pra saber se um compromisso de hoje já passou. */
+function agoraHHMM(): string {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 /** Dias corridos desde um timestamp (0 = hoje). */
 function diasDesde(ts: string): number {
   const [a, m, d] = dataLocalDe(ts).split("-").map(Number);
@@ -80,6 +95,9 @@ function CartaoView({
   onDescer,
   podeSubir,
   podeDescer,
+  agenda,
+  onAbrirAgenda,
+  onCriarAgenda,
 }: {
   c: CartaoKanban;
   onAbrir: () => void;
@@ -88,6 +106,9 @@ function CartaoView({
   onDescer: () => void;
   podeSubir: boolean;
   podeDescer: boolean;
+  agenda: AgendaAtiva | null;
+  onAbrirAgenda: () => void;
+  onCriarAgenda: () => void;
 }) {
   const coluna = c.coluna as ColunaKanban;
   const i = COLUNAS_KANBAN.indexOf(coluna);
@@ -118,6 +139,20 @@ function CartaoView({
         >
           {c.titulo}
         </div>
+        {agenda && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAbrirAgenda();
+            }}
+            aria-label="Ver compromisso na Agenda"
+            title="Ver compromisso na Agenda"
+            className="shrink-0 rounded p-0.5 text-primary transition hover:bg-primary/10"
+          >
+            <IconCalendarEvent className="size-4" />
+          </button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -130,6 +165,11 @@ function CartaoView({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={onCriarAgenda}>
+              <IconCalendarEvent className="mr-2 size-4" />
+              {agenda ? "Criar outra agenda" : "Criar agenda"}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             {COLUNAS_KANBAN.filter((col) => col !== coluna).map((col) => (
               <DropdownMenuItem key={col} onClick={() => onMoverPara(col)}>
                 <span
@@ -151,6 +191,16 @@ function CartaoView({
 
       {c.descricao && (
         <p className="mt-1 line-clamp-2 pl-3.5 text-xs text-muted-foreground">{c.descricao}</p>
+      )}
+
+      {agenda && (
+        <div className="mt-1.5 flex items-center gap-1 pl-3.5 text-xs font-medium text-primary">
+          <IconCalendarEvent className="size-3.5 shrink-0" />
+          {agenda.data === hoje() ? "Hoje" : fmtData(agenda.data)}
+          {!agenda.evento.dia_inteiro && agenda.evento.hora_inicio && (
+            <> · {hhmm(agenda.evento.hora_inicio)}</>
+          )}
+        </div>
       )}
 
       <div className="mt-2 flex items-center gap-2 pl-3.5 text-[11px] text-muted-foreground">
@@ -397,6 +447,35 @@ function Kanban() {
     coluna: ColunaKanban;
   } | null>(null);
   const colunaRefs = useRef<Partial<Record<ColunaKanban, HTMLDivElement | null>>>({});
+  const [agendaDialog, setAgendaDialog] = useState<{
+    evento: Evento | null;
+    cartao: CartaoKanban;
+  } | null>(null);
+
+  const { data: eventos = [] } = useEventos();
+  const { data: conclusoes = [] } = useConclusoes();
+
+  /**
+   * Por cartão, o próximo compromisso vinculado que ainda vale: a partir de
+   * hoje, sem conclusão, e (se for hoje com horário) que ainda não terminou.
+   * Vencido ou concluído some do cartão — ícone e data.
+   */
+  const agendaPorCartao = useMemo(() => {
+    const vinculados = eventos.filter((e) => e.kanban_cartao_id);
+    const concluidas = new Set(conclusoes.map((c) => `${c.evento_id}|${c.data}`));
+    const agora = agoraHHMM();
+    const mapa = new Map<string, AgendaAtiva>();
+    for (const o of expandirOcorrencias(vinculados, hoje(), addDias(hoje(), 366))) {
+      if (concluidas.has(`${o.evento.id}|${o.dataOcorrencia}`)) continue;
+      if (o.dataOcorrencia === hoje() && !o.evento.dia_inteiro) {
+        const termina = hhmm(o.evento.hora_fim ?? o.evento.hora_inicio);
+        if (termina && termina < agora) continue;
+      }
+      const id = o.evento.kanban_cartao_id as string;
+      if (!mapa.has(id)) mapa.set(id, { evento: o.evento, data: o.dataOcorrencia });
+    }
+    return mapa;
+  }, [eventos, conclusoes]);
 
   const filtrados = useMemo(
     () => (escopoFiltro === "todos" ? cartoes : cartoes.filter((c) => c.escopo === escopoFiltro)),
@@ -561,6 +640,14 @@ function Kanban() {
                       onDescer={() => trocarOrdem(col, idx, 1)}
                       podeSubir={col !== "concluido" && idx > 0}
                       podeDescer={col !== "concluido" && idx < porColuna[col].length - 1}
+                      agenda={agendaPorCartao.get(c.id) ?? null}
+                      onAbrirAgenda={() =>
+                        setAgendaDialog({
+                          evento: agendaPorCartao.get(c.id)?.evento ?? null,
+                          cartao: c,
+                        })
+                      }
+                      onCriarAgenda={() => setAgendaDialog({ evento: null, cartao: c })}
                     />
                   ))
                 )}
@@ -568,6 +655,21 @@ function Kanban() {
             </div>
           ))}
         </div>
+      )}
+
+      {agendaDialog && (
+        <EventoDialog
+          aberto
+          onOpenChange={(aberto) => !aberto && setAgendaDialog(null)}
+          evento={agendaDialog.evento}
+          dataPadrao={hoje()}
+          inicial={{
+            titulo: agendaDialog.cartao.titulo,
+            descricao: agendaDialog.cartao.descricao ?? "",
+            profissional: agendaDialog.cartao.escopo === "profissional",
+          }}
+          kanbanCartaoId={agendaDialog.cartao.id}
+        />
       )}
 
       {dialog && (

@@ -24,7 +24,7 @@ export function useEventos() {
 export function useCreateEvento() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: NovoEvento) => createEvento(input),
+    mutationFn: (input: NovoEvento & { kanban_cartao_id?: string | null }) => createEvento(input),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });
 }
