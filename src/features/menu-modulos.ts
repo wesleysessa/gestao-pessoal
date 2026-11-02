@@ -9,6 +9,7 @@ import {
   IconDroplet,
   IconFlag,
   IconLayoutKanban,
+  IconBrandInstagram,
 } from "@tabler/icons-react";
 import type { AppIcon } from "@/components/app-icon";
 
@@ -31,6 +32,7 @@ export const MENU_MODULOS: ModuloMenu[] = [
   { label: "Diário", to: "/diario", icon: IconNotebook },
   { label: "Livros", to: "/livros", icon: IconBooks },
   { label: "Hidratação", to: "/agua", icon: IconDroplet },
+  { label: "Instagram", to: "/instagram", icon: IconBrandInstagram },
   { label: "Melhorias", to: "/melhorias", icon: IconBulb },
   { label: "Cadastros", to: "/cadastros", icon: IconSettings },
 ];

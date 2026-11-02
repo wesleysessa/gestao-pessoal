@@ -688,6 +688,63 @@ export type Database = {
         };
         Relationships: [];
       };
+      redes_uso: {
+        Row: {
+          id: string;
+          user_id: string;
+          rede: string;
+          data: string;
+          minutos: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          rede?: string;
+          data: string;
+          minutos: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          rede?: string;
+          data?: string;
+          minutos?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      redes_metas: {
+        Row: {
+          id: string;
+          user_id: string;
+          rede: string;
+          minutos: number;
+          vigente_desde: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          rede?: string;
+          minutos: number;
+          vigente_desde?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          rede?: string;
+          minutos?: number;
+          vigente_desde?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       modulos_home: {
         Row: {
           user_id: string;
