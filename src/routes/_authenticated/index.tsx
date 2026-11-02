@@ -7,7 +7,6 @@ import {
   IconDroplet,
   IconCalendar,
   IconLayoutKanban,
-  IconBrandInstagram,
   IconChevronLeft,
   IconChevronRight,
 } from "@tabler/icons-react";
@@ -83,14 +82,6 @@ const MODULOS: Modulo[] = [
     bg: "bg-orange-50 dark:bg-orange-950/40",
     border: "border-orange-200 dark:border-orange-900",
     accent: "text-orange-600 dark:text-orange-400",
-  },
-  {
-    rotulo: "Instagram",
-    to: "/instagram",
-    icon: IconBrandInstagram,
-    bg: "bg-pink-50 dark:bg-pink-950/40",
-    border: "border-pink-200 dark:border-pink-900",
-    accent: "text-pink-600 dark:text-pink-400",
   },
 ];
 
