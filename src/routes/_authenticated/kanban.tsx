@@ -10,6 +10,8 @@ import {
   IconHome,
   IconLayoutKanban,
   IconPlus,
+  IconSearch,
+  IconX,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { SectionHeader } from "@/components/ds";
@@ -76,6 +78,14 @@ type AgendaAtiva = { evento: Evento; data: string };
 function agoraHHMM(): string {
   const d = new Date();
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+/** Minúsculo e sem acento — "Resende" acha "resende", "Ação" acha "acao". */
+function normalizar(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
 }
 
 /** Dias corridos desde um timestamp (0 = hoje). */
@@ -442,6 +452,7 @@ function Kanban() {
   const reordenar = useReordenarColuna();
 
   const [escopoFiltro, setEscopoFiltro] = useState<"todos" | Escopo>("todos");
+  const [busca, setBusca] = useState("");
   const [dialog, setDialog] = useState<{
     cartao: CartaoKanban | null;
     coluna: ColunaKanban;
@@ -477,9 +488,34 @@ function Kanban() {
     return mapa;
   }, [eventos, conclusoes]);
 
+  /**
+   * Texto pesquisável de cada cartão: título e descrição, mais título, local
+   * e descrição de qualquer agenda vinculada a ele (ativa ou não).
+   */
+  const textoBuscaPorCartao = useMemo(() => {
+    const mapa = new Map<string, string>();
+    for (const c of cartoes) mapa.set(c.id, `${c.titulo} ${c.descricao ?? ""}`);
+    for (const e of eventos) {
+      if (!e.kanban_cartao_id || !mapa.has(e.kanban_cartao_id)) continue;
+      mapa.set(
+        e.kanban_cartao_id,
+        `${mapa.get(e.kanban_cartao_id)} ${e.titulo} ${e.local ?? ""} ${e.descricao ?? ""}`,
+      );
+    }
+    for (const [id, texto] of mapa) mapa.set(id, normalizar(texto));
+    return mapa;
+  }, [cartoes, eventos]);
+
+  const termoBusca = normalizar(busca.trim());
+
   const filtrados = useMemo(
-    () => (escopoFiltro === "todos" ? cartoes : cartoes.filter((c) => c.escopo === escopoFiltro)),
-    [cartoes, escopoFiltro],
+    () =>
+      cartoes.filter(
+        (c) =>
+          (escopoFiltro === "todos" || c.escopo === escopoFiltro) &&
+          (!termoBusca || textoBuscaPorCartao.get(c.id)?.includes(termoBusca)),
+      ),
+    [cartoes, escopoFiltro, termoBusca, textoBuscaPorCartao],
   );
 
   const porColuna = useMemo(() => {
@@ -548,6 +584,26 @@ function Kanban() {
         <span>
           <strong className="text-foreground">{emAndamento}</strong> em andamento
         </span>
+      </div>
+
+      <div className="relative mb-3 sm:max-w-sm">
+        <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="Buscar cartão (título, descrição, agenda)..."
+          className="pl-8"
+        />
+        {busca && (
+          <button
+            type="button"
+            onClick={() => setBusca("")}
+            aria-label="Limpar busca"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <IconX className="size-3.5" />
+          </button>
+        )}
       </div>
 
       <div className="mb-3 flex gap-1.5">
@@ -627,7 +683,7 @@ function Kanban() {
                 {porColuna[col].length === 0 ? (
                   <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
                     <IconLayoutKanban className="mb-1 size-5" stroke={1.5} />
-                    Vazio
+                    {termoBusca ? "Nada encontrado" : "Vazio"}
                   </div>
                 ) : (
                   porColuna[col].map((c, idx) => (
