@@ -57,6 +57,7 @@ import {
   fmtDuracao,
   fmtIntervalo,
   fmtQuando,
+  milhar,
   paraAno,
   unidadeAuto,
 } from "@/features/linha-do-tempo/util";
@@ -75,14 +76,25 @@ function normalizar(texto: string) {
 /** Data digitada como número + unidade ("66" + "milhões de anos atrás"). */
 type Quando = { valor: string; unidade: Unidade };
 
+/**
+ * Põe os pontos de milhar enquanto digita (4000000 → 4.000.000); vírgula é a
+ * casa decimal (66,5 milhões). Anos d.C. ficam sem ponto, como se escreve (1789).
+ */
+function comPontos(texto: string, unidade: Unidade): string {
+  const [inteiro, ...resto] = texto.split(",");
+  const digitos = inteiro.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+  const agrupado = unidade === "dc" ? digitos : milhar(digitos);
+  return resto.length ? `${agrupado},${resto.join("").replace(/\D/g, "")}` : agrupado;
+}
+
 function quandoDe(ano: number | null, unidade?: string | null): Quando {
   if (ano == null) return { valor: "", unidade: "ac" };
   const u = (unidade as Unidade | null) ?? unidadeAuto(ano);
-  return { valor: String(deAno(ano, u)), unidade: u };
+  return { valor: comPontos(String(deAno(ano, u)).replace(".", ","), u), unidade: u };
 }
 
 function anoDe(q: Quando): number | null {
-  const v = Number(q.valor.replace(",", "."));
+  const v = Number(q.valor.replace(/\./g, "").replace(",", "."));
   if (!q.valor.trim() || !Number.isFinite(v)) return null;
   return paraAno(v, q.unidade);
 }
@@ -101,13 +113,15 @@ function CampoQuando({
       <Input
         inputMode="decimal"
         value={valor.valor}
-        onChange={(e) => onChange({ ...valor, valor: e.target.value })}
+        onChange={(e) => onChange({ ...valor, valor: comPontos(e.target.value, valor.unidade) })}
         placeholder={placeholder}
         className="w-28 shrink-0"
       />
       <Select
         value={valor.unidade}
-        onValueChange={(u) => onChange({ ...valor, unidade: u as Unidade })}
+        onValueChange={(u) =>
+          onChange({ valor: comPontos(valor.valor, u as Unidade), unidade: u as Unidade })
+        }
       >
         <SelectTrigger>
           <SelectValue />

@@ -48,6 +48,9 @@ function arred(n: number) {
 
 const num = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
+/** Ponto de milhar em um número inteiro escrito só com dígitos: 4000000 → 4.000.000. */
+export const milhar = (n: number | string) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
 export function fmtAno(ano: number, unidade?: string | null): string {
   const u = (unidade as Unidade | null) ?? unidadeAuto(ano);
   const v = deAno(ano, u);
@@ -57,9 +60,9 @@ export function fmtAno(ano: number, unidade?: string | null): string {
     case "mil":
       return `${num(v)} mil anos atrás`;
     case "ac":
-      return `${v} a.C.`;
+      return `${milhar(v)} a.C.`;
     case "dc":
-      return v < 1000 ? `${v} d.C.` : String(v);
+      return v < 1000 ? `${v} d.C.` : v >= 10_000 ? milhar(v) : String(v);
   }
 }
 
