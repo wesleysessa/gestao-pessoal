@@ -693,6 +693,7 @@ export type Database = {
           id: string;
           user_id: string;
           nome: string;
+          descricao: string | null;
           pai_id: string | null;
           inicio: number | null;
           fim: number | null;
@@ -703,6 +704,7 @@ export type Database = {
           id?: string;
           user_id?: string;
           nome: string;
+          descricao: string | null;
           pai_id?: string | null;
           inicio?: number | null;
           fim?: number | null;
@@ -713,6 +715,7 @@ export type Database = {
           id?: string;
           user_id?: string;
           nome?: string;
+          descricao?: string | null;
           pai_id?: string | null;
           inicio?: number | null;
           fim?: number | null;

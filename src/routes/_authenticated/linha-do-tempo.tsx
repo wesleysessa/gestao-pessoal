@@ -330,6 +330,7 @@ function FormPeriodo({
   const [inicio, setInicio] = useState<Quando>(quandoDe(periodo?.inicio ?? null));
   const [fim, setFim] = useState<Quando>(quandoDe(periodo?.fim ?? null));
   const [cor, setCor] = useState<CorPeriodo>((periodo?.cor as CorPeriodo) ?? "amber");
+  const [descricao, setDescricao] = useState(periodo?.descricao ?? "");
 
   // Não pode ficar dentro de si mesma nem de uma fase que está dentro dela.
   const bloqueados = periodo ? descendentes(periodo.id, periodos) : new Set<string>();
@@ -351,6 +352,7 @@ function FormPeriodo({
         id: periodo?.id,
         input: {
           nome: nome.trim(),
+          descricao: descricao.trim() || null,
           pai_id: paiId === SEM_PAI ? null : paiId,
           inicio: ini,
           fim: f,
@@ -398,6 +400,15 @@ function FormPeriodo({
         <CampoQuando valor={fim} onChange={setFim} placeholder="Ex.: 66" />
       </div>
       <div className="space-y-1.5">
+        <Label>Observações (opcional)</Label>
+        <Textarea
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          placeholder="Ex.: Subdivisões: Paleolítico, Neolítico e Idade dos Metais"
+          className="min-h-[70px]"
+        />
+      </div>
+      <div className="space-y-1.5">
         <Label>Cor</Label>
         <div className="flex flex-wrap gap-2">
           {CORES_PERIODO.map((c) => (
@@ -427,9 +438,17 @@ function FormPeriodo({
   );
 }
 
-function DialogFases({ periodos, onFechar }: { periodos: Periodo[]; onFechar: () => void }) {
+function DialogFases({
+  periodos,
+  editarInicial,
+  onFechar,
+}: {
+  periodos: Periodo[];
+  editarInicial?: Periodo;
+  onFechar: () => void;
+}) {
   const remover = useDeletePeriodo();
-  const [editando, setEditando] = useState<Periodo | "nova" | null>(null);
+  const [editando, setEditando] = useState<Periodo | "nova" | null>(editarInicial ?? null);
   const arvore = arvoreDePeriodos(periodos);
 
   function excluir(p: Periodo) {
@@ -481,6 +500,11 @@ function DialogFases({ periodos, onFechar }: { periodos: Periodo[]; onFechar: ()
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{p.nome}</p>
                   <p className="truncate text-[11px] text-muted-foreground">{fmtIntervalo(p)}</p>
+                  {p.descricao && (
+                    <p className="line-clamp-2 whitespace-pre-line text-[11px] italic text-muted-foreground">
+                      {p.descricao}
+                    </p>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -518,7 +542,7 @@ function LinhaDoTempo() {
   const [divisao, setDivisao] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
   const [dialogFato, setDialogFato] = useState<{ evento: EventoLinha | null } | null>(null);
-  const [fasesAberto, setFasesAberto] = useState(false);
+  const [fasesAberto, setFasesAberto] = useState<{ editar?: Periodo } | null>(null);
 
   const comCaminho = useMemo(
     () => eventos.map((e) => ({ evento: e, caminho: caminhoDoAno(e.ano, periodos) })),
@@ -535,6 +559,16 @@ function LinhaDoTempo() {
         })),
     [periodos, comCaminho],
   );
+
+  const faseSelecionada = periodos.find((p) => p.id === divisao);
+  // Fases dentro da divisão selecionada (todos os níveis), na ordem da árvore.
+  const subfases = useMemo(() => {
+    if (!divisao) return [];
+    const ids = descendentes(divisao, periodos);
+    return arvoreDePeriodos(periodos).filter(
+      (o) => ids.has(o.periodo.id) && o.periodo.id !== divisao,
+    );
+  }, [divisao, periodos]);
 
   const termo = normalizar(busca.trim());
   const visiveis = comCaminho.filter(
@@ -555,7 +589,7 @@ function LinhaDoTempo() {
             size="sm"
             variant="outline"
             className="gap-1.5"
-            onClick={() => setFasesAberto(true)}
+            onClick={() => setFasesAberto({})}
           >
             <IconStack2 className="size-3.5" /> Fases
           </Button>
@@ -595,6 +629,52 @@ function LinhaDoTempo() {
           </button>
         ))}
       </div>
+
+      {faseSelecionada && (
+        <div className="mb-3 rounded-lg border border-border bg-muted/40 p-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">{faseSelecionada.nome}</p>
+              <p className="text-[11px] text-muted-foreground">{fmtIntervalo(faseSelecionada)}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFasesAberto({ editar: faseSelecionada })}
+              aria-label="Editar fase"
+              className="rounded p-1 text-muted-foreground hover:text-foreground"
+            >
+              <IconPencil className="size-4" />
+            </button>
+          </div>
+          {faseSelecionada.descricao ? (
+            <p className="mt-1.5 whitespace-pre-line text-xs text-foreground/80">
+              {faseSelecionada.descricao}
+            </p>
+          ) : (
+            <p className="mt-1.5 text-xs italic text-muted-foreground">
+              Sem observações. Toque no lápis para escrever sobre esta fase.
+            </p>
+          )}
+          {subfases.length > 0 && (
+            <div className="mt-2 space-y-1 border-t border-border/60 pt-2">
+              {subfases.map(({ periodo: s, nivel }) => (
+                <div key={s.id} style={{ paddingLeft: `${(nivel - 1) * 12}px` }}>
+                  <p className="flex items-center gap-1.5 text-xs font-medium">
+                    <span className={cn("size-2 rounded-full", corInfo(s.cor).dot)} />
+                    {s.nome}
+                    <span className="font-normal text-muted-foreground">· {fmtIntervalo(s)}</span>
+                  </p>
+                  {s.descricao && (
+                    <p className="whitespace-pre-line pl-3.5 text-[11px] text-muted-foreground">
+                      {s.descricao}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {eventos.length > 0 && (
         <div className="relative mb-4">
@@ -686,7 +766,13 @@ function LinhaDoTempo() {
           onFechar={() => setDialogFato(null)}
         />
       )}
-      {fasesAberto && <DialogFases periodos={periodos} onFechar={() => setFasesAberto(false)} />}
+      {fasesAberto && (
+        <DialogFases
+          periodos={periodos}
+          editarInicial={fasesAberto.editar}
+          onFechar={() => setFasesAberto(null)}
+        />
+      )}
     </div>
   );
 }
