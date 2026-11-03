@@ -79,7 +79,14 @@ export function fmtDuracao(anos: number): string {
 /** Data de um fato: pontual ("1789") ou com duração ("10000 a.C. → 1000 a.C."). */
 export function fmtQuando(e: EventoLinha): string {
   const ini = fmtAno(e.ano, e.unidade);
+  if (e.ate_hoje) return `${ini} → hoje`;
   return e.ano_fim == null ? ini : `${ini} → ${fmtAno(e.ano_fim, e.unidade_fim)}`;
+}
+
+/** "durou 9 mil anos" / "há 237 anos" (até hoje); vazio pra fato pontual. */
+export function fmtDuracaoFato(e: Pick<EventoLinha, "ano" | "ano_fim" | "ate_hoje">): string {
+  if (e.ate_hoje) return `há ${fmtDuracao(anoAtual() - e.ano)}`;
+  return e.ano_fim == null ? "" : `durou ${fmtDuracao(e.ano_fim - e.ano)}`;
 }
 
 export function contem(p: Periodo, ano: number) {

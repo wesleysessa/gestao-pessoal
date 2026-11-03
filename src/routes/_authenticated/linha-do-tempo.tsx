@@ -55,6 +55,7 @@ import {
   descendentes,
   fmtAno,
   fmtDuracao,
+  fmtDuracaoFato,
   fmtIntervalo,
   fmtQuando,
   milhar,
@@ -173,7 +174,8 @@ function DialogFato({
     evento ? quandoDe(evento.ano, evento.unidade) : { valor: "", unidade: "ac" },
   );
 
-  const [temFim, setTemFim] = useState(evento?.ano_fim != null);
+  const [temFim, setTemFim] = useState(evento?.ano_fim != null || !!evento?.ate_hoje);
+  const [ateHoje, setAteHoje] = useState(!!evento?.ate_hoje);
   const [ate, setAte] = useState<Quando>(
     evento?.ano_fim != null
       ? quandoDe(evento.ano_fim, evento.unidade_fim)
@@ -181,7 +183,16 @@ function DialogFato({
   );
 
   const ano = anoDe(quando);
-  const anoFim = temFim ? anoDe(ate) : null;
+  const continua = temFim && ateHoje;
+  const anoFim = temFim && !ateHoje ? anoDe(ate) : null;
+  const duracao =
+    ano == null
+      ? ""
+      : fmtDuracaoFato({
+          ano,
+          ano_fim: anoFim != null && anoFim > ano ? anoFim : null,
+          ate_hoje: continua,
+        });
   const caminho = ano == null ? [] : caminhoDoAno(ano, periodos);
 
   function confirmar() {
@@ -193,7 +204,7 @@ function DialogFato({
       toast.error("Informe quando aconteceu");
       return;
     }
-    if (temFim && anoFim == null) {
+    if (temFim && !ateHoje && anoFim == null) {
       toast.error("Informe até quando durou");
       return;
     }
@@ -211,6 +222,7 @@ function DialogFato({
           unidade: quando.unidade,
           ano_fim: anoFim,
           unidade_fim: anoFim == null ? null : ate.unidade,
+          ate_hoje: continua,
         },
       },
       { onSuccess: onFechar, onError: (e: Error) => toast.error(e.message) },
@@ -247,7 +259,16 @@ function DialogFato({
             {temFim && (
               <>
                 <Label className="block pt-1.5">Até</Label>
-                <CampoQuando valor={ate} onChange={setAte} placeholder="Ex.: 1000" />
+                {!ateHoje && <CampoQuando valor={ate} onChange={setAte} placeholder="Ex.: 1000" />}
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={ateHoje}
+                    onChange={(e) => setAteHoje(e.target.checked)}
+                    className="size-4 accent-primary"
+                  />
+                  Até hoje (continua acontecendo)
+                </label>
               </>
             )}
             <label className="flex items-center gap-2 pt-1 text-sm">
@@ -263,12 +284,9 @@ function DialogFato({
               <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-xs text-muted-foreground">
                 <span>
                   {fmtAno(ano, quando.unidade)}
-                  {anoFim != null && anoFim > ano && (
-                    <>
-                      {" → "}
-                      {fmtAno(anoFim, ate.unidade)} (durou {fmtDuracao(anoFim - ano)})
-                    </>
-                  )}
+                  {continua && " → hoje"}
+                  {anoFim != null && anoFim > ano && ` → ${fmtAno(anoFim, ate.unidade)}`}
+                  {duracao && ` (${duracao})`}
                 </span>
                 {caminho.length > 0 ? (
                   <>
@@ -738,10 +756,10 @@ function LinhaDoTempo() {
                   >
                     <p className="text-xs font-semibold text-primary">
                       {fmtQuando(evento)}
-                      {evento.ano_fim != null && (
+                      {fmtDuracaoFato(evento) && (
                         <span className="font-normal text-muted-foreground">
-                          {" · durou "}
-                          {fmtDuracao(evento.ano_fim - evento.ano)}
+                          {" · "}
+                          {fmtDuracaoFato(evento)}
                         </span>
                       )}
                     </p>

@@ -734,6 +734,7 @@ export type Database = {
           unidade: string | null;
           ano_fim: number | null;
           unidade_fim: string | null;
+          ate_hoje: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -746,6 +747,7 @@ export type Database = {
           unidade?: string | null;
           ano_fim?: number | null;
           unidade_fim?: string | null;
+          ate_hoje?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -758,6 +760,7 @@ export type Database = {
           unidade?: string | null;
           ano_fim?: number | null;
           unidade_fim?: string | null;
+          ate_hoje?: boolean;
           created_at?: string;
           updated_at?: string;
         };

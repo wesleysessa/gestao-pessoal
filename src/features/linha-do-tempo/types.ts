@@ -6,7 +6,7 @@ export type EventoLinha = Database["public"]["Tables"]["linha_eventos"]["Row"];
 export type NovoPeriodo = Pick<Periodo, "nome" | "descricao" | "pai_id" | "inicio" | "fim" | "cor">;
 export type NovoEventoLinha = Pick<
   EventoLinha,
-  "titulo" | "descricao" | "ano" | "unidade" | "ano_fim" | "unidade_fim"
+  "titulo" | "descricao" | "ano" | "unidade" | "ano_fim" | "unidade_fim" | "ate_hoje"
 >;
 
 /** Jeito de digitar uma data: tempo geológico ("anos atrás") ou calendário. */
