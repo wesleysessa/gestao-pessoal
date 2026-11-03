@@ -729,6 +729,8 @@ export type Database = {
           descricao: string | null;
           ano: number;
           unidade: string | null;
+          ano_fim: number | null;
+          unidade_fim: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -739,6 +741,8 @@ export type Database = {
           descricao?: string | null;
           ano: number;
           unidade?: string | null;
+          ano_fim?: number | null;
+          unidade_fim?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -749,6 +753,8 @@ export type Database = {
           descricao?: string | null;
           ano?: number;
           unidade?: string | null;
+          ano_fim?: number | null;
+          unidade_fim?: string | null;
           created_at?: string;
           updated_at?: string;
         };

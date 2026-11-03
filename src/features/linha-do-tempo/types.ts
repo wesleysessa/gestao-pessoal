@@ -4,7 +4,10 @@ export type Periodo = Database["public"]["Tables"]["linha_periodos"]["Row"];
 export type EventoLinha = Database["public"]["Tables"]["linha_eventos"]["Row"];
 
 export type NovoPeriodo = Pick<Periodo, "nome" | "pai_id" | "inicio" | "fim" | "cor">;
-export type NovoEventoLinha = Pick<EventoLinha, "titulo" | "descricao" | "ano" | "unidade">;
+export type NovoEventoLinha = Pick<
+  EventoLinha,
+  "titulo" | "descricao" | "ano" | "unidade" | "ano_fim" | "unidade_fim"
+>;
 
 /** Jeito de digitar uma data: tempo geológico ("anos atrás") ou calendário. */
 export type Unidade = "milhoes" | "mil" | "ac" | "dc";

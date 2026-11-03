@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { hoje } from "@/lib/data";
 import { useEventosLinha, usePeriodos } from "@/features/linha-do-tempo/hooks";
 import { corInfo } from "@/features/linha-do-tempo/types";
-import { caminhoDoAno, fatoDoDia, fmtAno } from "@/features/linha-do-tempo/util";
+import { caminhoDoAno, fatoDoDia, fmtQuando } from "@/features/linha-do-tempo/util";
 
 /** Card da Home: um fato por dia, com o que veio antes e depois dele. */
 export function LinhaDoTempoCard() {
@@ -64,9 +64,7 @@ export function LinhaDoTempoCard() {
         {evento ? (
           <>
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs font-semibold text-primary">
-                {fmtAno(evento.ano, evento.unidade)}
-              </span>
+              <span className="text-xs font-semibold text-primary">{fmtQuando(evento)}</span>
               {fase && (
                 <span
                   className={cn(
@@ -85,12 +83,12 @@ export function LinhaDoTempoCard() {
               <div className="mt-1.5 space-y-0.5 text-xs text-muted-foreground">
                 {antes && (
                   <p className="truncate">
-                    ↑ Antes: {antes.titulo} ({fmtAno(antes.ano, antes.unidade)})
+                    ↑ Antes: {antes.titulo} ({fmtQuando(antes)})
                   </p>
                 )}
                 {depois && (
                   <p className="truncate">
-                    ↓ Depois: {depois.titulo} ({fmtAno(depois.ano, depois.unidade)})
+                    ↓ Depois: {depois.titulo} ({fmtQuando(depois)})
                   </p>
                 )}
               </div>

@@ -56,6 +56,7 @@ import {
   fmtAno,
   fmtDuracao,
   fmtIntervalo,
+  fmtQuando,
   paraAno,
   unidadeAuto,
 } from "@/features/linha-do-tempo/util";
@@ -158,7 +159,15 @@ function DialogFato({
     evento ? quandoDe(evento.ano, evento.unidade) : { valor: "", unidade: "ac" },
   );
 
+  const [temFim, setTemFim] = useState(evento?.ano_fim != null);
+  const [ate, setAte] = useState<Quando>(
+    evento?.ano_fim != null
+      ? quandoDe(evento.ano_fim, evento.unidade_fim)
+      : { valor: "", unidade: evento ? quandoDe(evento.ano, evento.unidade).unidade : "ac" },
+  );
+
   const ano = anoDe(quando);
+  const anoFim = temFim ? anoDe(ate) : null;
   const caminho = ano == null ? [] : caminhoDoAno(ano, periodos);
 
   function confirmar() {
@@ -170,6 +179,14 @@ function DialogFato({
       toast.error("Informe quando aconteceu");
       return;
     }
+    if (temFim && anoFim == null) {
+      toast.error("Informe até quando durou");
+      return;
+    }
+    if (anoFim != null && anoFim <= ano) {
+      toast.error("O fim precisa vir depois do início");
+      return;
+    }
     salvar.mutate(
       {
         id: evento?.id,
@@ -178,6 +195,8 @@ function DialogFato({
           descricao: descricao.trim() || null,
           ano,
           unidade: quando.unidade,
+          ano_fim: anoFim,
+          unidade_fim: anoFim == null ? null : ate.unidade,
         },
       },
       { onSuccess: onFechar, onError: (e: Error) => toast.error(e.message) },
@@ -209,11 +228,34 @@ function DialogFato({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Quando</Label>
+            <Label>{temFim ? "De" : "Quando"}</Label>
             <CampoQuando valor={quando} onChange={setQuando} placeholder="Ex.: 66" />
+            {temFim && (
+              <>
+                <Label className="block pt-1.5">Até</Label>
+                <CampoQuando valor={ate} onChange={setAte} placeholder="Ex.: 1000" />
+              </>
+            )}
+            <label className="flex items-center gap-2 pt-1 text-sm">
+              <input
+                type="checkbox"
+                checked={temFim}
+                onChange={(e) => setTemFim(e.target.checked)}
+                className="size-4 accent-primary"
+              />
+              Durou um período (tem início e fim)
+            </label>
             {ano != null && (
               <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-xs text-muted-foreground">
-                <span>{fmtAno(ano, quando.unidade)}</span>
+                <span>
+                  {fmtAno(ano, quando.unidade)}
+                  {anoFim != null && anoFim > ano && (
+                    <>
+                      {" → "}
+                      {fmtAno(anoFim, ate.unidade)} (durou {fmtDuracao(anoFim - ano)})
+                    </>
+                  )}
+                </span>
                 {caminho.length > 0 ? (
                   <>
                     <span>· entra em</span>
@@ -601,7 +643,13 @@ function LinhaDoTempo() {
                     className="w-full rounded-lg border border-border bg-card p-3 text-left transition hover:bg-muted/40"
                   >
                     <p className="text-xs font-semibold text-primary">
-                      {fmtAno(evento.ano, evento.unidade)}
+                      {fmtQuando(evento)}
+                      {evento.ano_fim != null && (
+                        <span className="font-normal text-muted-foreground">
+                          {" · durou "}
+                          {fmtDuracao(evento.ano_fim - evento.ano)}
+                        </span>
+                      )}
                     </p>
                     <p className="text-sm font-medium text-foreground">{evento.titulo}</p>
                     {evento.descricao && (

@@ -73,6 +73,12 @@ export function fmtDuracao(anos: number): string {
   return `${num(anos)} ${anos === 1 ? "ano" : "anos"}`;
 }
 
+/** Data de um fato: pontual ("1789") ou com duração ("10000 a.C. → 1000 a.C."). */
+export function fmtQuando(e: EventoLinha): string {
+  const ini = fmtAno(e.ano, e.unidade);
+  return e.ano_fim == null ? ini : `${ini} → ${fmtAno(e.ano_fim, e.unidade_fim)}`;
+}
+
 export function contem(p: Periodo, ano: number) {
   return (p.inicio == null || p.inicio <= ano) && (p.fim == null || ano < p.fim);
 }
