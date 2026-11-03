@@ -18,6 +18,7 @@ import { Route as AuthenticatedCadastrosRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDiarioRouteImport } from './routes/_authenticated/diario'
 import { Route as AuthenticatedFitbitCallbackRouteImport } from './routes/_authenticated/fitbit-callback'
 import { Route as AuthenticatedKanbanRouteImport } from './routes/_authenticated/kanban'
+import { Route as AuthenticatedLinhaDoTempoRouteImport } from './routes/_authenticated/linha-do-tempo'
 import { Route as AuthenticatedLivrosRouteImport } from './routes/_authenticated/livros'
 import { Route as AuthenticatedMelhoriasRouteImport } from './routes/_authenticated/melhorias'
 import { Route as AuthenticatedPrioridadesRouteImport } from './routes/_authenticated/prioridades'
@@ -69,6 +70,12 @@ const AuthenticatedKanbanRoute = AuthenticatedKanbanRouteImport.update({
   path: '/kanban',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLinhaDoTempoRoute =
+  AuthenticatedLinhaDoTempoRouteImport.update({
+    id: '/linha-do-tempo',
+    path: '/linha-do-tempo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLivrosRoute = AuthenticatedLivrosRouteImport.update({
   id: '/livros',
   path: '/livros',
@@ -106,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/diario': typeof AuthenticatedDiarioRoute
   '/fitbit-callback': typeof AuthenticatedFitbitCallbackRoute
   '/kanban': typeof AuthenticatedKanbanRoute
+  '/linha-do-tempo': typeof AuthenticatedLinhaDoTempoRoute
   '/livros': typeof AuthenticatedLivrosRoute
   '/melhorias': typeof AuthenticatedMelhoriasRoute
   '/prioridades': typeof AuthenticatedPrioridadesRoute
@@ -120,6 +128,7 @@ export interface FileRoutesByTo {
   '/diario': typeof AuthenticatedDiarioRoute
   '/fitbit-callback': typeof AuthenticatedFitbitCallbackRoute
   '/kanban': typeof AuthenticatedKanbanRoute
+  '/linha-do-tempo': typeof AuthenticatedLinhaDoTempoRoute
   '/livros': typeof AuthenticatedLivrosRoute
   '/melhorias': typeof AuthenticatedMelhoriasRoute
   '/prioridades': typeof AuthenticatedPrioridadesRoute
@@ -137,6 +146,7 @@ export interface FileRoutesById {
   '/_authenticated/diario': typeof AuthenticatedDiarioRoute
   '/_authenticated/fitbit-callback': typeof AuthenticatedFitbitCallbackRoute
   '/_authenticated/kanban': typeof AuthenticatedKanbanRoute
+  '/_authenticated/linha-do-tempo': typeof AuthenticatedLinhaDoTempoRoute
   '/_authenticated/livros': typeof AuthenticatedLivrosRoute
   '/_authenticated/melhorias': typeof AuthenticatedMelhoriasRoute
   '/_authenticated/prioridades': typeof AuthenticatedPrioridadesRoute
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/diario'
     | '/fitbit-callback'
     | '/kanban'
+    | '/linha-do-tempo'
     | '/livros'
     | '/melhorias'
     | '/prioridades'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/diario'
     | '/fitbit-callback'
     | '/kanban'
+    | '/linha-do-tempo'
     | '/livros'
     | '/melhorias'
     | '/prioridades'
@@ -185,6 +197,7 @@ export interface FileRouteTypes {
     | '/_authenticated/diario'
     | '/_authenticated/fitbit-callback'
     | '/_authenticated/kanban'
+    | '/_authenticated/linha-do-tempo'
     | '/_authenticated/livros'
     | '/_authenticated/melhorias'
     | '/_authenticated/prioridades'
@@ -263,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKanbanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/linha-do-tempo': {
+      id: '/_authenticated/linha-do-tempo'
+      path: '/linha-do-tempo'
+      fullPath: '/linha-do-tempo'
+      preLoaderRoute: typeof AuthenticatedLinhaDoTempoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/livros': {
       id: '/_authenticated/livros'
       path: '/livros'
@@ -308,6 +328,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDiarioRoute: typeof AuthenticatedDiarioRoute
   AuthenticatedFitbitCallbackRoute: typeof AuthenticatedFitbitCallbackRoute
   AuthenticatedKanbanRoute: typeof AuthenticatedKanbanRoute
+  AuthenticatedLinhaDoTempoRoute: typeof AuthenticatedLinhaDoTempoRoute
   AuthenticatedLivrosRoute: typeof AuthenticatedLivrosRoute
   AuthenticatedMelhoriasRoute: typeof AuthenticatedMelhoriasRoute
   AuthenticatedPrioridadesRoute: typeof AuthenticatedPrioridadesRoute
@@ -323,6 +344,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDiarioRoute: AuthenticatedDiarioRoute,
   AuthenticatedFitbitCallbackRoute: AuthenticatedFitbitCallbackRoute,
   AuthenticatedKanbanRoute: AuthenticatedKanbanRoute,
+  AuthenticatedLinhaDoTempoRoute: AuthenticatedLinhaDoTempoRoute,
   AuthenticatedLivrosRoute: AuthenticatedLivrosRoute,
   AuthenticatedMelhoriasRoute: AuthenticatedMelhoriasRoute,
   AuthenticatedPrioridadesRoute: AuthenticatedPrioridadesRoute,

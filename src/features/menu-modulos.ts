@@ -9,6 +9,7 @@ import {
   IconDroplet,
   IconFlag,
   IconLayoutKanban,
+  IconTimeline,
 } from "@tabler/icons-react";
 import type { AppIcon } from "@/components/app-icon";
 
@@ -30,6 +31,7 @@ export const MENU_MODULOS: ModuloMenu[] = [
   { label: "Vocabulário", to: "/vocabulario", icon: IconLanguage },
   { label: "Diário", to: "/diario", icon: IconNotebook },
   { label: "Livros", to: "/livros", icon: IconBooks },
+  { label: "Linha do Tempo", to: "/linha-do-tempo", icon: IconTimeline },
   { label: "Hidratação", to: "/agua", icon: IconDroplet },
   { label: "Melhorias", to: "/melhorias", icon: IconBulb },
   { label: "Cadastros", to: "/cadastros", icon: IconSettings },

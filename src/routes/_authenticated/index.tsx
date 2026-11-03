@@ -13,6 +13,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { FraseDoDia } from "@/components/frase-do-dia";
 import { AprendizadoDoDia } from "@/components/aprendizado-do-dia";
+import { LinhaDoTempoCard } from "@/components/linha-do-tempo-card";
 import { GoogleHealthCard } from "@/components/google-health-card";
 import type { AppIcon } from "@/components/app-icon";
 import { useStreakResumo } from "@/features/streak/hooks";
@@ -165,6 +166,7 @@ function Home() {
 
       <FraseDoDia />
       <AprendizadoDoDia />
+      <LinhaDoTempoCard />
     </div>
   );
 }

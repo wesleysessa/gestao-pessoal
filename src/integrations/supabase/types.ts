@@ -688,6 +688,72 @@ export type Database = {
         };
         Relationships: [];
       };
+      linha_periodos: {
+        Row: {
+          id: string;
+          user_id: string;
+          nome: string;
+          pai_id: string | null;
+          inicio: number | null;
+          fim: number | null;
+          cor: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          nome: string;
+          pai_id?: string | null;
+          inicio?: number | null;
+          fim?: number | null;
+          cor?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          nome?: string;
+          pai_id?: string | null;
+          inicio?: number | null;
+          fim?: number | null;
+          cor?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      linha_eventos: {
+        Row: {
+          id: string;
+          user_id: string;
+          titulo: string;
+          descricao: string | null;
+          ano: number;
+          unidade: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          titulo: string;
+          descricao?: string | null;
+          ano: number;
+          unidade?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          titulo?: string;
+          descricao?: string | null;
+          ano?: number;
+          unidade?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       modulos_home: {
         Row: {
           user_id: string;
